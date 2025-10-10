@@ -1,0 +1,110 @@
+# Hugging Face cache
+.cache/
+huggingface/
+~/.cache/huggingface/
+
+# Model checkpoints and outputs
+checkpoints/
+outputs/
+logs/
+runs/
+wandb/
+tensorboard_logs/
+
+# Data files (keep structure, ignore actual data)
+data/
+datasets/
+*.csv
+*.jsonl
+*.json
+*.parquet
+*.pkl
+*.pickle
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# SLURM
+slurm-*.out
+*.err
+*.log
+
+# Reports (keep structure, ignore generated content)
+reports/curves/*.png
+reports/curves/*.jpg
+reports/curves/*.pdf
+reports/examples.jsonl
+reports/results/
+reports/plots/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Model artifacts
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.model
+
+# Config overrides (keep templates)
+configs/*_local.yaml
+configs/*_personal.yaml
+
+docs/
