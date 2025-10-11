@@ -35,6 +35,9 @@ training:
   fp16: false                 # Use bfloat16 instead
   bf16: true                  # Better numerical stability than fp16
   
+  # Gradient checkpointing (optional for LoRA, mainly for full fine-tuning)
+  gradient_checkpointing: false # LoRA doesn't need gradient checkpointing
+  
   # Logging and checkpointing
   logging_steps: 100          # Log every N steps
   save_steps: 1000            # Save checkpoint every N steps

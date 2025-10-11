@@ -262,6 +262,9 @@ class BioLaySummTrainer:
             fp16=False,  # Use bf16 instead
             bf16=self.config.get('training', {}).get('bf16', True),
             
+            # Gradient checkpointing (memory optimization for full fine-tuning)
+            gradient_checkpointing=self._should_enable_gradient_checkpointing(),
+            
             # Evaluation
             evaluation_strategy="steps",
             eval_steps=training_config.get('eval_steps', 1000),
@@ -401,6 +404,46 @@ class BioLaySummTrainer:
             json.dump(strategy_info, f, indent=2, ensure_ascii=False)
         
         print(f"Training strategy logged to: {strategy_path}")
+    
+    def _should_enable_gradient_checkpointing(self) -> bool:
+        """
+        Determine if gradient checkpointing should be enabled based on configuration.
+        
+        Returns:
+            bool: True if gradient checkpointing should be enabled
+        """
+        # Check if full fine-tuning is enabled
+        training_strategy = self.config.get('training', {}).get('strategy', 'lora')
+        full_finetuning_enabled = self.config.get('full_finetuning', {}).get('enabled', False)
+        
+        is_full_finetuning = (training_strategy == 'full' or full_finetuning_enabled)
+        
+        if not is_full_finetuning:
+            # LoRA doesn't need gradient checkpointing
+            return False
+        
+        # Check explicit gradient checkpointing setting
+        training_config = self.config.get('training', {})
+        full_ft_config = self.config.get('full_finetuning', {})
+        full_ft_settings = self.config.get('full_finetuning_settings', {})
+        
+        # Priority order: training > full_finetuning_settings > full_finetuning > default
+        gradient_checkpointing = (
+            training_config.get('gradient_checkpointing',
+            full_ft_settings.get('gradient_checkpointing', 
+            full_ft_config.get('gradient_checkpointing', True)))  # Default to True for full FT
+        )
+        
+        if gradient_checkpointing:
+            print("✅ Gradient checkpointing enabled for full fine-tuning")
+            print("   - Memory usage reduced (trades compute for memory)")
+            print("   - Training will be ~20% slower but use less VRAM")
+        else:
+            print("⚠️  Gradient checkpointing disabled for full fine-tuning")
+            print("   - Higher memory usage but faster training")
+            print("   - May cause OOM errors with large models")
+        
+        return gradient_checkpointing
     
     def train(self) -> None:
         """
