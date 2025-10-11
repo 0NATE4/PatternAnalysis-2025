@@ -199,6 +199,7 @@ class BioLaySummDataset:
         
         This method handles the tokenization of input and target texts with proper
         padding, truncation, and label preparation for sequence-to-sequence training.
+        Implements the critical -100 padding for labels to ensure proper loss calculation.
         
         Args:
             examples (dict): Batch of examples with 'input_text' and 'target_text' fields
@@ -206,8 +207,14 @@ class BioLaySummDataset:
             
         Returns:
             dict: Tokenized examples with 'input_ids', 'attention_mask', and 'labels'
+            
+        Note:
+            The -100 padding in labels is crucial for PyTorch's CrossEntropyLoss.
+            Tokens with -100 are ignored during loss calculation, allowing proper
+            handling of variable-length sequences with padding.
         """
         # Tokenize input texts (expert reports with prompts)
+        # Truncate to max_source_length (512 tokens)
         model_inputs = tokenizer(
             examples["input_text"],
             max_length=self.max_source_length,
@@ -217,6 +224,7 @@ class BioLaySummDataset:
         )
         
         # Tokenize target texts (layperson summaries)
+        # Truncate to max_target_length (256 tokens)
         labels = tokenizer(
             examples["target_text"],
             max_length=self.max_target_length,
@@ -226,7 +234,8 @@ class BioLaySummDataset:
         )
         
         # Extract label input_ids and replace padding tokens with -100
-        # This is crucial: -100 tokens are ignored by the loss function
+        # This is CRITICAL: -100 tokens are ignored by the loss function
+        # Without this, the model would try to predict padding tokens
         labels = labels["input_ids"]
         labels[labels == tokenizer.pad_token_id] = -100
         
