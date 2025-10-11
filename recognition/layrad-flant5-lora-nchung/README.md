@@ -282,6 +282,220 @@ FLAN-T5 is released under Apache 2.0 license. Our LoRA adaptations follow the sa
 }
 ```
 
+## Training Instructions
+
+This section provides detailed instructions for training the FLAN-T5 LoRA model on both CPU and GPU environments.
+
+### Prerequisites
+
+1. **Environment Setup:**
+   ```bash
+   # Create conda environment
+   conda create -n biolaysumm python=3.9 -y
+   conda activate biolaysumm
+   
+   # Install PyTorch (CPU version)
+   conda install pytorch torchvision torchaudio cpuonly -c pytorch
+   
+   # Install other dependencies
+   pip install -r requirements.txt
+   ```
+
+2. **For GPU Training (Optional):**
+   ```bash
+   # Install PyTorch with CUDA support
+   conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+   
+   # Verify CUDA availability
+   python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+   ```
+
+### Configuration
+
+The training configuration is managed through `configs/train_flant5_base_lora.yaml`. Key settings:
+
+- **Dataset**: BioLaySumm expert-to-layperson pairs
+- **Model**: google/flan-t5-base with LoRA adaptation
+- **Hardware**: Automatic CPU/GPU detection
+- **Metrics**: ROUGE-1, ROUGE-2, ROUGE-L, ROUGE-Lsum
+
+### CPU Training
+
+**Recommended for:**
+- Testing and development
+- Small-scale experiments
+- Systems without GPU
+
+**Instructions:**
+```bash
+# Activate environment
+conda activate biolaysumm
+
+# Navigate to project directory
+cd recognition/layrad-flant5-lora-nchung
+
+# Run training (CPU mode)
+bash scripts/run_train_local.sh
+```
+
+**Expected Performance:**
+- Training time: ~2-4 hours for 1 epoch (150K samples)
+- Memory usage: ~4-6 GB RAM
+- Model size: 248M total parameters, 885K trainable (0.36%)
+
+**Monitoring CPU Training:**
+```bash
+# Check training progress
+tail -f checkpoints/flan-t5-base-lora-biolaysumm/reports/logs/training.log
+
+# Monitor metrics
+cat checkpoints/flan-t5-base-lora-biolaysumm/reports/metrics/training_metrics.json
+
+# Check training summary
+cat checkpoints/flan-t5-base-lora-biolaysumm/reports/training_summary.json
+```
+
+### Single GPU Training
+
+**Recommended for:**
+- Production training
+- Faster iteration
+- Better convergence
+
+**Prerequisites:**
+- CUDA-capable GPU (8GB+ VRAM recommended)
+- CUDA 11.8+ installed
+- GPU drivers updated
+
+**Instructions:**
+```bash
+# Activate environment
+conda activate biolaysumm
+
+# Install GPU version (if not already installed)
+conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+
+# Navigate to project directory
+cd recognition/layrad-flant5-lora-nchung
+
+# Run training (GPU mode)
+bash scripts/run_train_local.sh
+```
+
+**Expected Performance:**
+- Training time: ~30-60 minutes for 1 epoch (150K samples)
+- Memory usage: ~6-8 GB VRAM
+- Speed improvement: 3-5x faster than CPU
+
+**Monitoring GPU Training:**
+```bash
+# Monitor GPU usage
+nvidia-smi -l 1
+
+# Check training logs
+tail -f checkpoints/flan-t5-base-lora-biolaysumm/reports/logs/training.log
+
+# Monitor TensorBoard (if enabled)
+tensorboard --logdir checkpoints/flan-t5-base-lora-biolaysumm/logs
+```
+
+### Training Output Structure
+
+After training completes, you'll find:
+
+```
+checkpoints/flan-t5-base-lora-biolaysumm/
+├── reports/                          # Training logs and metrics
+│   ├── logs/
+│   │   ├── trainer_state.json       # Trainer state and progress
+│   │   └── training.log             # Training log file
+│   ├── metrics/
+│   │   └── training_metrics.json    # ROUGE metrics history
+│   ├── configs/
+│   │   └── training_arguments.json  # Training hyperparameters
+│   └── training_summary.json        # Complete training summary
+├── final_model/                      # Best model checkpoint
+│   ├── pytorch_model.bin
+│   ├── config.json
+│   ├── generation_config.json
+│   └── tokenizer files...
+├── training_config.yaml             # Training configuration
+└── training_results.json            # Training results summary
+```
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **CUDA Out of Memory:**
+   ```yaml
+   # Reduce batch size in configs/train_flant5_base_lora.yaml
+   training:
+     batch_size: 4  # Reduce from 8
+     gradient_accumulation_steps: 8  # Increase from 4
+   ```
+
+2. **CPU Training Too Slow:**
+   ```yaml
+   # Reduce dataset size for testing
+   # Use smaller subset: dataset.select(range(1000))
+   ```
+
+3. **Import Errors:**
+   ```bash
+   # Ensure all dependencies installed
+   pip install -r requirements.txt
+   
+   # Check Python version
+   python --version  # Should be 3.9+
+   ```
+
+4. **Dataset Loading Issues:**
+   ```bash
+   # Test dataset loading
+   python tests/test_dataset.py
+   ```
+
+### Performance Tuning
+
+**For Better Performance:**
+
+1. **GPU Optimization:**
+   - Use mixed precision training (bf16)
+   - Enable gradient accumulation
+   - Pin memory for data loading
+
+2. **CPU Optimization:**
+   - Reduce batch size
+   - Use fewer workers
+   - Enable gradient accumulation
+
+3. **Memory Optimization:**
+   - Use LoRA (already enabled)
+   - Reduce sequence lengths if needed
+   - Enable gradient checkpointing
+
+### Evaluation
+
+**ROUGE Metrics:**
+- **ROUGE-1**: Word-level overlap
+- **ROUGE-2**: Bigram overlap  
+- **ROUGE-L**: Longest common subsequence
+- **ROUGE-Lsum**: Sentence-level ROUGE-L
+
+**Best Model Selection:**
+- Model with highest validation ROUGE-Lsum is automatically saved
+- Checkpointing occurs every 1000 steps
+- Best model loaded at training end
+
+### Next Steps
+
+After training:
+1. **Evaluate** the model on test set
+2. **Generate** sample expert-to-layperson translations
+3. **Analyze** ROUGE metrics and training curves
+4. **Fine-tune** hyperparameters if needed
+
 ## Contributing
 
 This project is part of a university course assignment. For questions or issues, please contact the course instructor or create an issue in the repository.
