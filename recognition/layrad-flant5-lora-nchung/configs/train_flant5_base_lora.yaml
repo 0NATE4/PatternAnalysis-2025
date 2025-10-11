@@ -48,8 +48,6 @@ lora:
   target_modules:             # Modules to apply LoRA to
     - "q"                     # Query projection
     - "v"                     # Value projection
-    - "k"                     # Key projection (optional, for more capacity)
-    - "o"                     # Output projection (optional, for more capacity)
   bias: "none"                # LoRA bias type
   task_type: "SEQ_2_SEQ_LM"   # Sequence-to-sequence language modeling
 

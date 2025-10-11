@@ -1,11 +1,11 @@
 # Core ML libraries
 torch>=2.0.0
-transformers>=4.30.0
+transformers==4.30.0
 datasets>=2.12.0
 accelerate>=0.20.0
 
 # LoRA and PEFT
-peft>=0.4.0
+peft==0.4.0
 
 # Evaluation metrics
 evaluate>=0.4.0

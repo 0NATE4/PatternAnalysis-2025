@@ -223,9 +223,9 @@ class BioLaySummTrainer:
             predict_with_generate=True,  # Use generation for evaluation
             generation_config=self._create_generation_config(),
             
-            # Early stopping
-            early_stopping_patience=training_config.get('early_stopping_patience', 3),
-            early_stopping_threshold=training_config.get('early_stopping_threshold', 0.001),
+            # Note: Early stopping parameters not supported in transformers 4.30.0
+            # early_stopping_patience=training_config.get('early_stopping_patience', 3),
+            # early_stopping_threshold=training_config.get('early_stopping_threshold', 0.001),
             
             # Remove unused columns
             remove_unused_columns=True,
