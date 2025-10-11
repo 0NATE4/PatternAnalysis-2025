@@ -26,7 +26,7 @@ from peft import (
     PeftModel
 )
 
-from .utils import count_parameters, format_parameter_count
+from utils import count_parameters, format_parameter_count
 
 
 class FLANT5LoRAModel:
@@ -55,7 +55,13 @@ class FLANT5LoRAModel:
         self.model = None
         self.tokenizer = None
         self.lora_config = None
-        self.device = torch.device(config.get('hardware', {}).get('device', 'cuda'))
+        # Determine device - use CUDA if available, otherwise CPU
+        device_name = config.get('hardware', {}).get('device', 'cuda')
+        if device_name == 'cuda' and torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+            print(f"CUDA not available, using CPU instead")
         
         # Initialize model and tokenizer
         self._build_model()
@@ -82,17 +88,27 @@ class FLANT5LoRAModel:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
         # Load base model
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_name,
-            torch_dtype=torch_dtype,
-            device_map="auto" if torch.cuda.is_available() else None
-        )
+        if torch.cuda.is_available():
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                model_name,
+                torch_dtype=torch_dtype,
+                device_map="auto"
+            )
+        else:
+            # CPU-only loading
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float32  # Use float32 for CPU
+            )
         
         # Apply LoRA configuration
         self._apply_lora()
         
         # Move to device if not using device_map
-        if not torch.cuda.is_available() or "auto" not in str(self.model.device):
+        if not torch.cuda.is_available():
+            self.model = self.model.to(self.device)
+        elif hasattr(self.model, 'device') and str(self.model.device) == 'cpu':
+            # Model wasn't moved by device_map, move it manually
             self.model = self.model.to(self.device)
         
         print(f"Model loaded successfully on device: {self.device}")
