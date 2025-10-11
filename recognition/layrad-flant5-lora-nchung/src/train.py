@@ -13,8 +13,10 @@ import os
 import time
 import json
 import torch
+import evaluate
+import numpy as np
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from transformers import (
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
@@ -246,6 +248,9 @@ class BioLaySummTrainer:
         # Create data collator
         data_collator = self._create_data_collator()
         
+        # Set tokenizer for ROUGE computation
+        compute_rouge_metrics.tokenizer = self.tokenizer
+        
         # Create trainer
         trainer = Seq2SeqTrainer(
             model=self.model,
@@ -254,10 +259,14 @@ class BioLaySummTrainer:
             eval_dataset=self.val_dataset,
             tokenizer=self.tokenizer,
             data_collator=data_collator,
-            # Note: compute_metrics will be added in the next commit
+            compute_metrics=compute_rouge_metrics,
         )
         
         print("✅ Seq2SeqTrainer created successfully")
+        print("✅ ROUGE metrics integration enabled")
+        print("   - rouge1, rouge2, rougeL, rougeLsum")
+        print(f"   - Best model metric: eval_rougeLsum")
+        
         return trainer
     
     def train(self) -> None:
@@ -310,6 +319,64 @@ class BioLaySummTrainer:
         print(f"Final model saved to: {final_model_path}")
         
         return train_result
+
+
+def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
+    """
+    Compute ROUGE metrics for evaluation.
+    
+    Args:
+        eval_preds: Evaluation predictions from HuggingFace Trainer
+            - predictions: List of generated texts
+            - label_ids: List of reference texts
+    
+    Returns:
+        Dict containing ROUGE-1, ROUGE-2, ROUGE-L, and ROUGE-Lsum scores
+    """
+    predictions, labels = eval_preds
+    
+    # Load ROUGE metric
+    rouge = evaluate.load('rouge')
+    
+    # Decode predictions and labels
+    # Predictions are token IDs, labels are token IDs with -100 for padding
+    decoded_preds = []
+    decoded_labels = []
+    
+    # Get tokenizer from global scope (will be set by trainer)
+    tokenizer = getattr(compute_rouge_metrics, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("Tokenizer not set for ROUGE computation")
+    
+    # Decode predictions
+    for pred in predictions:
+        decoded_pred = tokenizer.decode(pred, skip_special_tokens=True)
+        decoded_preds.append(decoded_pred)
+    
+    # Decode labels (remove -100 tokens)
+    for label in labels:
+        # Remove -100 tokens (padding tokens in labels)
+        label = [token for token in label if token != -100]
+        decoded_label = tokenizer.decode(label, skip_special_tokens=True)
+        decoded_labels.append(decoded_label)
+    
+    # Compute ROUGE metrics
+    rouge_results = rouge.compute(
+        predictions=decoded_preds,
+        references=decoded_labels,
+        use_aggregator=True,
+        use_stemmer=True
+    )
+    
+    # Extract individual ROUGE scores
+    metrics = {
+        'rouge1': rouge_results['rouge1'],
+        'rouge2': rouge_results['rouge2'],
+        'rougeL': rouge_results['rougeL'],
+        'rougeLsum': rouge_results['rougeLsum']
+    }
+    
+    return metrics
 
 
 def main():
