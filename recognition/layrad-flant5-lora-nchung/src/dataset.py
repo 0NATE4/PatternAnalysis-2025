@@ -40,21 +40,23 @@ class BioLaySummDataset:
         Initialize the BioLaySumm dataset loader.
         
         Args:
-            config (dict): Configuration dictionary containing:
-                - dataset_name: HuggingFace dataset name or local path
-                - max_source_length: Maximum input sequence length
-                - max_target_length: Maximum output sequence length
-                - seed: Random seed for reproducibility
-                - local_data_path: Optional local data path override
+            config (dict): Configuration dictionary containing dataset section:
+                - dataset.name: HuggingFace dataset name or local path
+                - dataset.max_source_length: Maximum input sequence length
+                - dataset.max_target_length: Maximum output sequence length
+                - dataset.seed: Random seed for reproducibility
+                - dataset.local_data_path: Optional local data path override
         """
         self.config = config
-        self.dataset_name = config.get('dataset_name', 'BioLaySumm/BioLaySumm2025-LaymanRRG-opensource-track')
+        dataset_config = config.get('dataset', {})
+        
+        self.dataset_name = dataset_config.get('name', 'BioLaySumm/BioLaySumm2025-LaymanRRG-opensource-track')
         # 512 tokens for source and 256 tokens for target
-        self.max_source_length = config.get('max_source_length', 512)
-        self.max_target_length = config.get('max_target_length', 256)
+        self.max_source_length = dataset_config.get('max_source_length', 512)
+        self.max_target_length = dataset_config.get('max_target_length', 256)
         # 42 is a common seed for reproducibility
-        self.seed = config.get('seed', 42)
-        self.local_data_path = config.get('local_data_path', None)
+        self.seed = dataset_config.get('seed', 42)
+        self.local_data_path = dataset_config.get('local_data_path', None)
         
         # Set random seed for reproducible shuffling
         random.seed(self.seed)
