@@ -18,6 +18,7 @@ model:
 
 # Training Configuration
 training:
+  strategy: "full"            # Training strategy: 'lora' or 'full'
   batch_size: 4               # Smaller batch size for full fine-tuning (more memory intensive)
   gradient_accumulation_steps: 8  # Effective batch size = 4 * 8 = 32
   learning_rate: 5e-5         # Lower learning rate for full fine-tuning

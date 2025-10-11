@@ -85,6 +85,56 @@ class BioLaySummTrainer:
         save_config(self.config, self.output_dir / 'training_config.yaml')
         
         print(f"Training setup complete. Output directory: {self.output_dir}")
+    
+    def _validate_training_strategy(self) -> str:
+        """
+        Validate and determine the training strategy from configuration.
+        
+        Returns:
+            str: 'lora' or 'full'
+            
+        Raises:
+            ValueError: If strategy is invalid or configuration is inconsistent
+        """
+        # Get strategy from training config
+        training_strategy = self.config.get('training', {}).get('strategy', 'lora')
+        
+        # Get full fine-tuning flag (backward compatibility)
+        full_finetuning_enabled = self.config.get('full_finetuning', {}).get('enabled', False)
+        
+        # Validate strategy
+        valid_strategies = {'lora', 'full'}
+        if training_strategy not in valid_strategies:
+            raise ValueError(f"Invalid training strategy: {training_strategy}. Must be one of {valid_strategies}")
+        
+        # Check for configuration consistency
+        if training_strategy == 'full' and not full_finetuning_enabled:
+            print("⚠️  Warning: training.strategy='full' but full_finetuning.enabled=False")
+            print("   Setting full_finetuning.enabled=True for consistency")
+            self.config.setdefault('full_finetuning', {})['enabled'] = True
+            
+        elif training_strategy == 'lora' and full_finetuning_enabled:
+            print("⚠️  Warning: training.strategy='lora' but full_finetuning.enabled=True")
+            print("   Setting full_finetuning.enabled=False for consistency")
+            self.config.setdefault('full_finetuning', {})['enabled'] = False
+        
+        # Strategy validation based on model
+        model_name = self.config.get('model', {}).get('name', '')
+        
+        if training_strategy == 'full':
+            # Full fine-tuning recommendations
+            if 'flan-t5-base' in model_name.lower():
+                print("⚠️  Warning: Full fine-tuning FLAN-T5-base requires significant memory")
+                print("   Consider using T5-small or enabling gradient checkpointing")
+            
+            # Check for gradient checkpointing
+            gradient_checkpointing = self.config.get('full_finetuning_settings', {}).get('gradient_checkpointing', False)
+            if not gradient_checkpointing:
+                print("⚠️  Warning: Full fine-tuning without gradient checkpointing may cause OOM")
+                print("   Consider enabling gradient_checkpointing in full_finetuning_settings")
+        
+        print(f"✅ Training strategy validated: {training_strategy}")
+        return training_strategy
         
     def _build_model_and_data(self) -> None:
         """
@@ -92,11 +142,10 @@ class BioLaySummTrainer:
         """
         print("\nBuilding model and loading datasets...")
         
-        # Check training strategy
-        training_strategy = self.config.get('training', {}).get('strategy', 'lora')
-        full_finetuning_enabled = self.config.get('full_finetuning', {}).get('enabled', False)
+        # Validate and determine training strategy
+        training_strategy = self._validate_training_strategy()
         
-        if training_strategy == 'full' or full_finetuning_enabled:
+        if training_strategy == 'full':
             print("🔧 Using FULL FINE-TUNING strategy")
             self.model_wrapper = self._build_full_finetuning_model()
         else:
@@ -282,8 +331,9 @@ class BioLaySummTrainer:
         print("   - rouge1, rouge2, rougeL, rougeLsum")
         print(f"   - Best model metric: eval_rougeLsum")
         
-        # Log training arguments
+        # Log training arguments with strategy information
         log_training_arguments(training_args, self.reports_dir)
+        self._log_strategy_info()
         
         return trainer
     
@@ -318,6 +368,39 @@ class BioLaySummTrainer:
             print("✅ Gradient checkpointing enabled")
         
         return model_wrapper
+    
+    def _log_strategy_info(self) -> None:
+        """
+        Log training strategy information to reports directory.
+        """
+        import json
+        import pandas as pd
+        from pathlib import Path
+        
+        strategy_info = {
+            'timestamp': pd.Timestamp.now().isoformat(),
+            'training_strategy': self.config.get('training', {}).get('strategy', 'lora'),
+            'full_finetuning_enabled': self.config.get('full_finetuning', {}).get('enabled', False),
+            'model_name': self.config.get('model', {}).get('name', 'unknown'),
+            'model_config': {
+                'torch_dtype': self.config.get('model', {}).get('torch_dtype', 'unknown'),
+            },
+            'training_config': {
+                'batch_size': self.config.get('training', {}).get('batch_size', 'unknown'),
+                'learning_rate': self.config.get('training', {}).get('learning_rate', 'unknown'),
+                'num_epochs': self.config.get('training', {}).get('num_epochs', 'unknown'),
+                'gradient_accumulation_steps': self.config.get('training', {}).get('gradient_accumulation_steps', 'unknown'),
+            },
+            'lora_config': self.config.get('lora', {}),
+            'full_finetuning_config': self.config.get('full_finetuning', {}),
+            'full_finetuning_settings': self.config.get('full_finetuning_settings', {}),
+        }
+        
+        strategy_path = self.reports_dir / 'training_strategy.json'
+        with open(strategy_path, 'w', encoding='utf-8') as f:
+            json.dump(strategy_info, f, indent=2, ensure_ascii=False)
+        
+        print(f"Training strategy logged to: {strategy_path}")
     
     def train(self) -> None:
         """
