@@ -92,8 +92,17 @@ class BioLaySummTrainer:
         """
         print("\nBuilding model and loading datasets...")
         
-        # Initialize model wrapper
-        self.model_wrapper = build_model_with_lora(self.config)
+        # Check training strategy
+        training_strategy = self.config.get('training', {}).get('strategy', 'lora')
+        full_finetuning_enabled = self.config.get('full_finetuning', {}).get('enabled', False)
+        
+        if training_strategy == 'full' or full_finetuning_enabled:
+            print("🔧 Using FULL FINE-TUNING strategy")
+            self.model_wrapper = self._build_full_finetuning_model()
+        else:
+            print("🔧 Using LoRA strategy")
+            self.model_wrapper = build_model_with_lora(self.config)
+        
         model, tokenizer = self.model_wrapper.get_model_and_tokenizer()
         
         # Print parameter information
@@ -277,6 +286,38 @@ class BioLaySummTrainer:
         log_training_arguments(training_args, self.reports_dir)
         
         return trainer
+    
+    def _build_full_finetuning_model(self):
+        """
+        Build model for full fine-tuning (no LoRA).
+        
+        Returns:
+            Model wrapper for full fine-tuning
+        """
+        from modules import FLANT5LoRAModel
+        
+        # Create a model wrapper but without LoRA
+        model_wrapper = FLANT5LoRAModel(self.config)
+        
+        # Override the LoRA application to skip it
+        original_apply_lora = model_wrapper._apply_lora
+        
+        def skip_lora():
+            print("⚠️  Skipping LoRA application - using full fine-tuning")
+            print("🔧 All model parameters will be trainable")
+        
+        model_wrapper._apply_lora = skip_lora
+        
+        # Build the model without LoRA
+        model_wrapper._build_model()
+        
+        # Enable gradient checkpointing if specified
+        full_ft_config = self.config.get('full_finetuning_settings', {})
+        if full_ft_config.get('gradient_checkpointing', False):
+            model_wrapper.model.gradient_checkpointing_enable()
+            print("✅ Gradient checkpointing enabled")
+        
+        return model_wrapper
     
     def train(self) -> None:
         """
