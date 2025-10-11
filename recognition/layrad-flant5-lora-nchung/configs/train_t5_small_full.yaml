@@ -1,0 +1,124 @@
+# T5-Small Full Fine-Tuning Configuration
+# BioLaySumm Expert-to-Layperson Radiology Report Translation
+# Author: Nathan Chung
+# Course: COMP3710 Pattern Analysis
+
+# Dataset Configuration
+dataset:
+  name: "BioLaySumm/BioLaySumm2025-LaymanRRG-opensource-track"
+  max_source_length: 512      # Maximum input sequence length (expert reports)
+  max_target_length: 256      # Maximum output sequence length (layperson summaries)
+  seed: 42                    # Random seed for reproducible shuffling
+  local_data_path: null       # Optional local data path override
+
+# Model Configuration
+model:
+  name: "t5-small"            # T5-Small model (60M parameters, more manageable for full FT)
+  torch_dtype: "bfloat16"     # Mixed precision for memory efficiency
+
+# Training Configuration
+training:
+  batch_size: 4               # Smaller batch size for full fine-tuning (more memory intensive)
+  gradient_accumulation_steps: 8  # Effective batch size = 4 * 8 = 32
+  learning_rate: 5e-5         # Lower learning rate for full fine-tuning
+  num_epochs: 2               # Fewer epochs for full fine-tuning (more parameters to update)
+  warmup_steps: 500           # Learning rate warmup steps
+  weight_decay: 0.01          # L2 regularization
+  max_grad_norm: 1.0          # Gradient clipping
+  
+  # Early stopping
+  early_stopping_patience: 2  # Stop if no improvement for N epochs
+  early_stopping_threshold: 0.001  # Minimum improvement threshold
+  
+  # Mixed precision
+  fp16: false                 # Use bfloat16 instead
+  bf16: true                  # Better numerical stability than fp16
+  
+  # Logging and checkpointing
+  logging_steps: 100          # Log every N steps
+  save_steps: 1000            # Save checkpoint every N steps
+  eval_steps: 1000            # Evaluate every N steps
+  save_total_limit: 2         # Keep fewer checkpoints (full FT takes more space)
+
+# Full Fine-Tuning Configuration (No LoRA)
+full_finetuning:
+  enabled: true               # Enable full fine-tuning
+  freeze_embeddings: false    # Update all parameters including embeddings
+  freeze_encoder: false       # Update encoder parameters
+  freeze_decoder: false       # Update decoder parameters
+  gradient_checkpointing: true # Enable gradient checkpointing to save memory
+
+# Evaluation Configuration
+evaluation:
+  # Generation parameters for evaluation
+  max_new_tokens: 200         # Maximum tokens to generate
+  num_beams: 4                # Beam search width
+  length_penalty: 0.6         # Length penalty for beam search
+  no_repeat_ngram_size: 3     # Prevent repeating n-grams
+  early_stopping: true        # Stop generation when EOS token is generated
+  
+  # Metrics to compute
+  metrics:
+    - "rouge1"
+    - "rouge2" 
+    - "rougeL"
+    - "rougeLsum"
+  
+  # Evaluation strategy
+  eval_strategy: "steps"      # Evaluate every N steps
+  metric_for_best_model: "rougeLsum"  # Best model selection metric
+  greater_is_better: true     # Higher ROUGE scores are better
+
+# Hardware Configuration
+hardware:
+  device: "cuda"              # Device to use (cuda/cpu)
+  dataloader_num_workers: 2   # Fewer workers for full fine-tuning
+  pin_memory: true            # Pin memory for faster GPU transfer
+  
+# Distributed Training (for multi-GPU)
+distributed:
+  use_torchrun: false         # Use torchrun for distributed training
+  num_processes: 1            # Number of processes (GPUs)
+  backend: "nccl"             # Distributed backend
+
+# Output Configuration
+output:
+  output_dir: "./checkpoints/t5-small-full-biolaysumm"
+  run_name: "t5-small-full-biolaysumm"
+  report_to: ["tensorboard"]  # Logging backends
+  hub_model_id: null          # HuggingFace Hub model ID (if pushing)
+
+# Reproducibility
+reproducibility:
+  seed: 42                    # Global random seed
+  data_seed: 42               # Data shuffling seed
+  model_seed: 42              # Model initialization seed
+  set_seed: true              # Set all random seeds
+
+# Data Processing
+data_processing:
+  remove_unused_columns: true # Remove unused columns after tokenization
+  load_from_cache_file: false # Always reprocess data for consistency
+  preprocessing_num_workers: 1 # Number of workers for preprocessing
+
+# Full Fine-Tuning Specific Settings
+full_finetuning_settings:
+  # Memory optimization
+  gradient_checkpointing: true
+  dataloader_pin_memory: true
+  
+  # Learning rate scheduling
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  
+  # Regularization
+  dropout_rate: 0.1
+  attention_dropout: 0.1
+  
+  # Training stability
+  max_grad_norm: 1.0
+  clip_grad_norm: true
+  
+  # Monitoring
+  eval_accumulation_steps: 1
+  prediction_loss_only: false
