@@ -13,6 +13,8 @@ import random
 import yaml
 import torch
 import numpy as np
+import json
+from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -258,3 +260,177 @@ def validate_config(config: Dict[str, Any]) -> bool:
     
     print("Configuration validation passed")
     return True
+
+
+def create_reports_dir(output_dir: Path) -> Path:
+    """
+    Create reports directory structure for logging training information.
+    
+    Args:
+        output_dir (Path): Base output directory
+        
+    Returns:
+        Path: Path to the reports directory
+    """
+    reports_dir = output_dir / 'reports'
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create subdirectories
+    (reports_dir / 'logs').mkdir(exist_ok=True)
+    (reports_dir / 'metrics').mkdir(exist_ok=True)
+    (reports_dir / 'configs').mkdir(exist_ok=True)
+    
+    print(f"Reports directory created: {reports_dir}")
+    return reports_dir
+
+
+def log_training_arguments(training_args, reports_dir: Path) -> None:
+    """
+    Log training arguments to reports directory.
+    
+    Args:
+        training_args: HuggingFace TrainingArguments object
+        reports_dir (Path): Reports directory path
+    """
+    # Convert training arguments to dictionary
+    train_args_dict = training_args.to_dict()
+    
+    # Add additional metadata
+    train_args_info = {
+        'training_arguments': train_args_dict,
+        'timestamp': datetime.now().isoformat(),
+        'output_dir': str(training_args.output_dir),
+        'run_name': training_args.run_name,
+        'num_train_epochs': training_args.num_train_epochs,
+        'per_device_train_batch_size': training_args.per_device_train_batch_size,
+        'gradient_accumulation_steps': training_args.gradient_accumulation_steps,
+        'learning_rate': training_args.learning_rate,
+        'weight_decay': training_args.weight_decay,
+        'max_grad_norm': training_args.max_grad_norm,
+        'warmup_steps': training_args.warmup_steps,
+        'eval_strategy': training_args.eval_strategy,
+        'save_strategy': training_args.save_strategy,
+        'metric_for_best_model': training_args.metric_for_best_model,
+        'greater_is_better': training_args.greater_is_better,
+        'load_best_model_at_end': training_args.load_best_model_at_end,
+        'fp16': training_args.fp16,
+        'bf16': training_args.bf16,
+        'seed': training_args.seed,
+        'data_seed': training_args.data_seed,
+    }
+    
+    # Save to JSON file
+    train_args_path = reports_dir / 'configs' / 'training_arguments.json'
+    with open(train_args_path, 'w', encoding='utf-8') as f:
+        json.dump(train_args_info, f, indent=2, ensure_ascii=False)
+    
+    print(f"Training arguments logged to: {train_args_path}")
+
+
+def log_trainer_state(trainer, reports_dir: Path) -> None:
+    """
+    Log trainer state and metrics to reports directory.
+    
+    Args:
+        trainer: HuggingFace Trainer object
+        reports_dir (Path): Reports directory path
+    """
+    try:
+        # Get trainer state
+        state = trainer.state
+        
+        # Create trainer state info
+        trainer_state_info = {
+            'timestamp': datetime.now().isoformat(),
+            'global_step': state.global_step,
+            'epoch': state.epoch,
+            'max_steps': state.max_steps,
+            'num_train_epochs': state.num_train_epochs,
+            'total_flos': state.total_flos,
+            'log_history': state.log_history[-10:] if state.log_history else [],  # Last 10 logs
+            'best_metric': getattr(state, 'best_metric', None),
+            'best_model_checkpoint': getattr(state, 'best_model_checkpoint', None),
+            'is_local_process_zero': state.is_local_process_zero,
+            'is_world_process_zero': state.is_world_process_zero,
+            'is_hyper_param_search': state.is_hyper_param_search,
+        }
+        
+        # Save trainer state
+        state_path = reports_dir / 'logs' / 'trainer_state.json'
+        with open(state_path, 'w', encoding='utf-8') as f:
+            json.dump(trainer_state_info, f, indent=2, ensure_ascii=False)
+        
+        print(f"Trainer state logged to: {state_path}")
+        
+        # Log metrics if available
+        if hasattr(trainer, 'log_history') and trainer.log_history:
+            metrics_path = reports_dir / 'metrics' / 'training_metrics.json'
+            with open(metrics_path, 'w', encoding='utf-8') as f:
+                json.dump(trainer.log_history, f, indent=2, ensure_ascii=False)
+            
+            print(f"Training metrics logged to: {metrics_path}")
+            
+    except Exception as e:
+        print(f"Warning: Could not log trainer state: {e}")
+
+
+def log_training_summary(config: Dict[str, Any], model_info: Dict[str, Any], 
+                        training_time: float, reports_dir: Path) -> None:
+    """
+    Log a comprehensive training summary to reports directory.
+    
+    Args:
+        config (Dict[str, Any]): Training configuration
+        model_info (Dict[str, Any]): Model information (parameters, etc.)
+        training_time (float): Total training time in seconds
+        reports_dir (Path): Reports directory path
+    """
+    summary = {
+        'timestamp': datetime.now().isoformat(),
+        'training_summary': {
+            'total_training_time_seconds': training_time,
+            'total_training_time_hours': training_time / 3600,
+            'model_info': model_info,
+            'dataset_info': {
+                'name': config.get('dataset', {}).get('name', 'unknown'),
+                'max_source_length': config.get('dataset', {}).get('max_source_length', 'unknown'),
+                'max_target_length': config.get('dataset', {}).get('max_target_length', 'unknown'),
+            },
+            'model_config': {
+                'name': config.get('model', {}).get('name', 'unknown'),
+                'torch_dtype': config.get('model', {}).get('torch_dtype', 'unknown'),
+            },
+            'lora_config': config.get('lora', {}),
+            'training_config': config.get('training', {}),
+            'evaluation_config': config.get('evaluation', {}),
+            'hardware_config': config.get('hardware', {}),
+        }
+    }
+    
+    # Save summary
+    summary_path = reports_dir / 'training_summary.json'
+    with open(summary_path, 'w', encoding='utf-8') as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
+    
+    print(f"Training summary logged to: {summary_path}")
+
+
+def setup_logging(output_dir: Path) -> Path:
+    """
+    Setup comprehensive logging for training.
+    
+    Args:
+        output_dir (Path): Base output directory
+        
+    Returns:
+        Path: Path to the reports directory
+    """
+    reports_dir = create_reports_dir(output_dir)
+    
+    # Create a simple log file for stdout/stderr capture
+    log_file = reports_dir / 'logs' / 'training.log'
+    
+    print(f"Logging setup complete. Reports directory: {reports_dir}")
+    print(f"Training log file: {log_file}")
+    
+    return reports_dir

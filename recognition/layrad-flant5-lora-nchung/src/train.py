@@ -25,7 +25,10 @@ from transformers import (
 )
 from datasets import Dataset
 
-from utils import load_config, setup_reproducibility, get_device, create_output_dir, save_config
+from utils import (
+    load_config, setup_reproducibility, get_device, create_output_dir, save_config,
+    setup_logging, log_training_arguments, log_trainer_state, log_training_summary
+)
 from dataset import BioLaySummDataset
 from modules import build_model_with_lora
 
@@ -74,6 +77,9 @@ class BioLaySummTrainer:
         
         # Create output directory
         self.output_dir = create_output_dir(self.config)
+        
+        # Setup logging and reports directory
+        self.reports_dir = setup_logging(self.output_dir)
         
         # Save configuration
         save_config(self.config, self.output_dir / 'training_config.yaml')
@@ -267,6 +273,9 @@ class BioLaySummTrainer:
         print("   - rouge1, rouge2, rougeL, rougeLsum")
         print(f"   - Best model metric: eval_rougeLsum")
         
+        # Log training arguments
+        log_training_arguments(training_args, self.reports_dir)
+        
         return trainer
     
     def train(self) -> None:
@@ -296,6 +305,9 @@ class BioLaySummTrainer:
         
         print(f"\n✅ Training completed in {training_time:.2f} seconds ({training_time/3600:.2f} hours)")
         
+        # Log trainer state after training
+        log_trainer_state(self.trainer, self.reports_dir)
+        
         # Save final model
         print("Saving final model...")
         final_model_path = self.output_dir / 'final_model'
@@ -315,8 +327,13 @@ class BioLaySummTrainer:
         with open(self.output_dir / 'training_results.json', 'w') as f:
             json.dump(training_info, f, indent=2)
         
+        # Log comprehensive training summary
+        model_info = self.model_wrapper.count_params()
+        log_training_summary(self.config, model_info, training_time, self.reports_dir)
+        
         print(f"Training results saved to: {self.output_dir / 'training_results.json'}")
         print(f"Final model saved to: {final_model_path}")
+        print(f"Reports and logs saved to: {self.reports_dir}")
         
         return train_result
 
