@@ -75,7 +75,7 @@ cd "$PROJECT_ROOT"
 echo "=== Testing Dataset Loading ==="
 conda run -n torch python -c "
 from src.dataset import BioLaySummDataset
-from src.modules import FlanT5WithLoRA
+from src.modules import FLANT5LoRAModel
 import torch
 
 print('Testing dataset loading...')
@@ -83,7 +83,7 @@ dataset = BioLaySummDataset('train', max_samples=50)  # Very small sample for sp
 print(f'Dataset loaded: {len(dataset)} samples')
 
 print('Testing model initialization...')
-model = FlanT5WithLoRA('google/flan-t5-base', task_type='SEQ_2_SEQ_LM')
+model = FLANT5LoRAModel('google/flan-t5-base', task_type='SEQ_2_SEQ_LM')
 print('Model initialized successfully')
 
 print('Testing forward pass...')

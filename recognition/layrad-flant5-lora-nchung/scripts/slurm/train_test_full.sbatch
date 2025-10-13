@@ -75,7 +75,7 @@ cd "$PROJECT_ROOT"
 echo "=== Testing Full Fine-Tuning Setup ==="
 conda run -n torch python -c "
 from src.dataset import BioLaySummDataset
-from src.modules import FlanT5WithLoRA
+from src.modules import FLANT5LoRAModel
 import torch
 
 print('Testing dataset loading...')
@@ -83,7 +83,7 @@ dataset = BioLaySummDataset('train', max_samples=50)  # Very small sample for sp
 print(f'Dataset loaded: {len(dataset)} samples')
 
 print('Testing T5-small model initialization...')
-model = FlanT5WithLoRA('google/t5-small', task_type='SEQ_2_SEQ_LM')
+model = FLANT5LoRAModel('google/t5-small', task_type='SEQ_2_SEQ_LM')
 print('T5-small model initialized successfully')
 
 print('Testing full fine-tuning forward pass...')
