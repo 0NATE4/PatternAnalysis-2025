@@ -46,15 +46,15 @@ export PYTHONHASHSEED=42
 echo "=== FULL FINE-TUNING TEST - Environment Check ==="
 echo "Node: $(hostname)"
 echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits)"
-echo "CUDA Version: $(nvcc --version | grep release)"
-echo "Python: $(python --version)"
-echo "PyTorch: $(python -c 'import torch; print(torch.__version__)')"
+echo "CUDA Version: $(conda run -n torch nvcc --version | grep release || echo 'CUDA not available via conda')"
+echo "Python: $(conda run -n torch python --version)"
+echo "PyTorch: $(conda run -n torch python -c 'import torch; print(torch.__version__)')"
 echo "HF Cache: $HF_HOME"
 echo ""
 
 # Install required packages (if needed)
 echo "=== Installing Dependencies ==="
-conda run -n torch pip install -q transformers datasets accelerate evaluate rouge-score
+conda run -n torch pip install -q transformers datasets accelerate evaluate rouge-score peft
 
 # Print configuration
 echo "=== FULL FINE-TUNING TEST - Training Configuration ==="
