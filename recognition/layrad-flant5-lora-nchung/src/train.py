@@ -185,7 +185,7 @@ class BioLaySummTrainer:
         train_dataset = train_dataset.map(
             lambda examples: self.dataset_loader.preprocess_function(examples, tokenizer),
             batched=True,
-            num_proc=1,
+            num_proc=0,  # Disable multiprocessing to avoid CUDA fork issues
             load_from_cache_file=False,
             remove_columns=["input_text", "target_text", "source", "images_path"],
             desc="Tokenizing training dataset"
@@ -195,7 +195,7 @@ class BioLaySummTrainer:
         val_dataset = val_dataset.map(
             lambda examples: self.dataset_loader.preprocess_function(examples, tokenizer),
             batched=True,
-            num_proc=1,
+            num_proc=0,  # Disable multiprocessing to avoid CUDA fork issues
             load_from_cache_file=False,
             remove_columns=["input_text", "target_text", "source", "images_path"],
             desc="Tokenizing validation dataset"
