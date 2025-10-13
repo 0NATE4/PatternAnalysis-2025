@@ -297,6 +297,9 @@ class BioLaySummTrainer:
             seed=self.config.get('reproducibility', {}).get('seed', 42),
             data_seed=self.config.get('reproducibility', {}).get('data_seed', 42),
             
+            # Dataset handling
+            remove_unused_columns=False,  # Keep custom dataset columns
+            
             # Performance
             dataloader_num_workers=self.config.get('hardware', {}).get('dataloader_num_workers', 4),
             dataloader_pin_memory=self.config.get('hardware', {}).get('pin_memory', True),
@@ -308,9 +311,6 @@ class BioLaySummTrainer:
             # Note: Early stopping parameters not supported in transformers 4.30.0
             # early_stopping_patience=training_config.get('early_stopping_patience', 3),
             # early_stopping_threshold=training_config.get('early_stopping_threshold', 0.001),
-            
-            # Remove unused columns
-            remove_unused_columns=True,
         )
     
     def _create_trainer(self) -> Seq2SeqTrainer:
@@ -580,8 +580,13 @@ def main():
     """
     Main training function.
     """
+    import sys
+    
+    # Get config file from command line or use default
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'configs/train_flant5_base_lora.yaml'
+    
     # Load configuration
-    config = load_config('configs/train_flant5_base_lora.yaml')
+    config = load_config(config_file)
     
     # Create and run trainer
     trainer = BioLaySummTrainer(config)
