@@ -37,8 +37,8 @@ def quick_test():
         
         # Test model
         print("4. Testing model...")
-        model, tokenizer = build_model_with_lora(config)
-        print(f"   ✅ Model OK - {type(model).__name__}")
+        model_wrapper = build_model_with_lora(config)
+        print(f"   ✅ Model OK - {type(model_wrapper).__name__}")
         
         # Test trainer
         print("5. Testing trainer...")
