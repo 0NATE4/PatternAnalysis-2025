@@ -77,18 +77,25 @@ conda run -n torch python -c "
 from src.dataset import BioLaySummDataset
 from src.modules import FLANT5LoRAModel
 import torch
+import yaml
 
 print('Testing dataset loading...')
-dataset = BioLaySummDataset('train', max_samples=50)  # Very small sample for speed
-print(f'Dataset loaded: {len(dataset)} samples')
+# Load config and create dataset
+with open('configs/train_flant5_base_lora.yaml') as f:
+    config = yaml.safe_load(f)
+
+dataset = BioLaySummDataset(config)
+print(f'Dataset loaded successfully')
 
 print('Testing model initialization...')
 model = FLANT5LoRAModel('google/flan-t5-base', task_type='SEQ_2_SEQ_LM')
 print('Model initialized successfully')
 
 print('Testing forward pass...')
-sample = dataset[0]
-inputs = model.tokenizer(sample['radiology_report'], return_tensors='pt', max_length=256, truncation=True)  # Shorter sequences
+# Get a small sample for testing
+sample_data = dataset.train_dataset.select(range(1))  # Just 1 sample
+sample = sample_data[0]
+inputs = model.tokenizer(sample['radiology_report'], return_tensors='pt', max_length=256, truncation=True)
 labels = model.tokenizer(sample['layman_report'], return_tensors='pt', max_length=256, truncation=True)
 
 with torch.no_grad():
