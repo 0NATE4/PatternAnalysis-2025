@@ -25,12 +25,12 @@ from transformers import (
 )
 from datasets import Dataset
 
-from utils import (
+from .utils import (
     load_config, setup_reproducibility, get_device, create_output_dir, save_config,
     setup_logging, log_training_arguments, log_trainer_state, log_training_summary
 )
-from dataset import BioLaySummDataset
-from modules import build_model_with_lora
+from .dataset import BioLaySummDataset
+from .modules import build_model_with_lora
 
 
 class BioLaySummTrainer:

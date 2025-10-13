@@ -25,12 +25,12 @@ from transformers import (
 from datasets import Dataset
 from peft import PeftModel
 
-from utils import (
+from .utils import (
     load_config, setup_reproducibility, get_device, 
     create_reports_dir, log_training_arguments
 )
-from dataset import BioLaySummDataset
-from modules import FLANT5LoRAModel
+from .dataset import BioLaySummDataset
+from .modules import FLANT5LoRAModel
 
 
 class BioLaySummEvaluator:
