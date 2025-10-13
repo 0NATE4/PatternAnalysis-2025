@@ -30,8 +30,8 @@ OUT_ROOT="$PROJECT_ROOT/reports/test_run"
 # Ensure directories exist
 mkdir -p "$PROJECT_ROOT/logs" "$OUT_ROOT"/{curves,checkpoints}
 
-# Set up HuggingFace cache on node local scratch for faster I/O
-export HF_HOME="/scratch/$USER/hf_cache_test"
+# Set up HuggingFace cache in user's home directory
+export HF_HOME="$HOME/.cache/huggingface"
 mkdir -p "$HF_HOME"
 
 # Set up environment variables
