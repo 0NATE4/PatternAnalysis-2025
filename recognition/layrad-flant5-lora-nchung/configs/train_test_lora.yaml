@@ -31,7 +31,7 @@ training:
   # Logging and evaluation (frequent for test)
   logging_steps: 5
   eval_steps: 20
-  save_steps: 50
+  save_steps: 20  # Must be multiple of eval_steps
   load_best_model_at_end: false  # Don't load best for test
   
   # Early stopping
