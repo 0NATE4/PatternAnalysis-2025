@@ -30,10 +30,10 @@ training:
   weight_decay: 0.01
   max_grad_norm: 1.0
   warmup_steps: 2  # Minimal warmup
-  max_steps: 5     # Only 5 training steps!
+  max_steps: 10    # 10 training steps (more than save_steps)
   logging_steps: 1
   eval_steps: 3
-  save_steps: 5
+  save_steps: 6
   eval_strategy: "steps"
   save_strategy: "steps"
   load_best_model_at_end: false
