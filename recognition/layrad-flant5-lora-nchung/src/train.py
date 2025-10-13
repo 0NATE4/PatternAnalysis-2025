@@ -533,7 +533,7 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
     predictions, labels = eval_preds
     
     # Load ROUGE metric
-    rouge = evaluate.load('rouge')
+    rouge = evaluate_lib.load('rouge')
     
     # Decode predictions and labels
     # Predictions are token IDs, labels are token IDs with -100 for padding
