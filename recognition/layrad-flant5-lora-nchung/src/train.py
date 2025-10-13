@@ -263,9 +263,9 @@ class BioLaySummTrainer:
             per_device_train_batch_size=batch_size,
             per_device_eval_batch_size=batch_size,
             gradient_accumulation_steps=grad_accum_steps,
-            learning_rate=training_config.get('learning_rate', 1e-4),
-            weight_decay=training_config.get('weight_decay', 0.01),
-            max_grad_norm=training_config.get('max_grad_norm', 1.0),
+            learning_rate=float(training_config.get('learning_rate', 1e-4)),
+            weight_decay=float(training_config.get('weight_decay', 0.01)),
+            max_grad_norm=float(training_config.get('max_grad_norm', 1.0)),
             
             # Learning rate scheduling
             warmup_steps=training_config.get('warmup_steps', 500),
