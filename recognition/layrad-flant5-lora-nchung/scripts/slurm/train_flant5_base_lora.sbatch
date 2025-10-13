@@ -115,7 +115,7 @@ except Exception as e:
     
     # Run evaluation on test set
     echo "=== Running Final Evaluation ==="
-    conda run -n torch python src/evaluate.py "$CONFIG"
+    conda run -n torch python src/eval_runner.py "$CONFIG"
     
 else
     echo "❌ Training failed!"

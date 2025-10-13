@@ -88,12 +88,8 @@ fi
 
 # Run evaluation
 echo "=== Starting ROUGE Evaluation ==="
-conda run -n torch python src/evaluate.py \
-  --config "$CONFIG" \
-  --model_path "$MODEL_PATH" \
-  --output_dir "$OUT_ROOT" \
-  --split "$SPLIT" \
-  --max_samples "$MAX_SAMPLES"
+conda run -n torch python src/eval_runner.py \
+  "$CONFIG"
 
 # Check if evaluation completed successfully
 if [ $? -eq 0 ]; then
