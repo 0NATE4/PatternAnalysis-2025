@@ -48,8 +48,8 @@ echo "=== Environment Check ==="
 echo "Node: $(hostname)"
 echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits)"
 echo "CUDA Version: $(echo 'CUDA available via PyTorch')"
-echo "Python: $(python --version)"
-echo "PyTorch: $(python -c 'import torch; print(torch.__version__)')"
+echo "Python: $(conda run -n torch python --version)"
+echo "PyTorch: $(conda run -n torch python -c 'import torch; print(torch.__version__)')"
 echo "HF Cache: $HF_HOME"
 echo ""
 
@@ -78,22 +78,7 @@ conda run -n torch torchrun \
   --standalone \
   --nproc_per_node=1 \
   src/train.py \
-  --config "$CONFIG" \
-  --training.epochs "$EPOCHS" \
-  --training.batch_size "$BS" \
-  --training.learning_rate "$LR" \
-  --training.strategy "$STRATEGY" \
-  --training.output_dir "$OUT_ROOT/checkpoints" \
-  --training.seed "$RANDOM_SEED" \
-  --training.logging_steps 100 \
-  --training.eval_steps 500 \
-  --training.save_steps 1000 \
-  --training.evaluation_strategy steps \
-  --training.save_strategy steps \
-  --training.load_best_model_at_end true \
-  --training.metric_for_best_model rougeLsum \
-  --training.greater_is_better true \
-  --training.report_to none
+  "$CONFIG"
 
 # Check if training completed successfully
 if [ $? -eq 0 ]; then
@@ -130,11 +115,7 @@ except Exception as e:
     
     # Run evaluation on test set
     echo "=== Running Final Evaluation ==="
-    conda run -n torch python src/evaluate.py \
-      --config "$CONFIG" \
-      --model_path "$OUT_ROOT/checkpoints" \
-      --output_dir "$OUT_ROOT" \
-      --split test
+    conda run -n torch python src/evaluate.py "$CONFIG"
     
 else
     echo "❌ Training failed!"

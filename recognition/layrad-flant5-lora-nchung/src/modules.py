@@ -372,3 +372,165 @@ def count_model_parameters(model: torch.nn.Module) -> str:
     
     return (f"Model parameters: {format_parameter_count(trainable_params)} trainable "
             f"({trainable_percentage:.2f}%) of {format_parameter_count(total_params)} total")
+
+
+class FLANT5FullFinetuningModel:
+    """
+    FLAN-T5 model wrapper for full fine-tuning (no LoRA).
+    
+    This class provides a unified interface for loading and managing
+    FLAN-T5 models for full fine-tuning on the BioLaySumm translation task.
+    
+    Attributes:
+        config (dict): Configuration dictionary
+        model (AutoModelForSeq2SeqLM): Base FLAN-T5 model
+        tokenizer (AutoTokenizer): Model tokenizer
+        device (torch.device): Device the model is on
+    """
+    
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize FLAN-T5 model for full fine-tuning.
+        
+        Args:
+            config (dict): Configuration dictionary containing model settings
+        """
+        self.config = config
+        self.model = None
+        self.tokenizer = None
+        self.device = None
+        
+        # Load model and tokenizer
+        self._load_model()
+        self._load_tokenizer()
+        self._move_to_device()
+        
+        print("Full fine-tuning model loaded successfully")
+    
+    def _load_model(self):
+        """Load the base FLAN-T5 model for full fine-tuning."""
+        model_config = self.config.get('model', {})
+        model_name = model_config.get('name', 'google/flan-t5-base')
+        torch_dtype_str = model_config.get('torch_dtype', 'bfloat16')
+        
+        print(f"Loading FLAN-T5 model for full fine-tuning: {model_name}")
+        
+        # Convert dtype string to torch dtype
+        if torch_dtype_str == 'bfloat16':
+            torch_dtype = torch.bfloat16
+        elif torch_dtype_str == 'float16':
+            torch_dtype = torch.float16
+        else:
+            torch_dtype = torch.float32
+            
+        print(f"Using torch dtype: {torch_dtype}")
+        
+        # Load model for full fine-tuning (no LoRA)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_name,
+            torch_dtype=torch_dtype,
+            device_map=None,  # We'll move to device manually
+            trust_remote_code=False
+        )
+        
+        print("Full fine-tuning model loaded successfully")
+    
+    def _load_tokenizer(self):
+        """Load the tokenizer for the model."""
+        model_config = self.config.get('model', {})
+        model_name = model_config.get('name', 'google/flan-t5-base')
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            trust_remote_code=False
+        )
+        
+        print("Tokenizer loaded successfully")
+    
+    def _move_to_device(self):
+        """Move model to the appropriate device."""
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device
+        
+        if torch.cuda.is_available():
+            print(f"Moving model to CUDA device: {device}")
+            self.model = self.model.to(device)
+        else:
+            print("CUDA not available, using CPU instead")
+            self.model = self.model.to(device)
+            
+        print(f"Model loaded successfully on device: {device}")
+    
+    def get_model_and_tokenizer(self) -> Tuple[AutoModelForSeq2SeqLM, AutoTokenizer]:
+        """
+        Get the model and tokenizer.
+        
+        Returns:
+            Tuple[AutoModelForSeq2SeqLM, AutoTokenizer]: Model and tokenizer
+        """
+        return self.model, self.tokenizer
+    
+    def count_params(self) -> Dict[str, Any]:
+        """
+        Count model parameters for full fine-tuning.
+        
+        Returns:
+            Dict[str, Any]: Parameter count information
+        """
+        param_counts = count_parameters(self.model)
+        
+        print("\n" + "=" * 50)
+        print("MODEL PARAMETER SUMMARY (FULL FINE-TUNING)")
+        print("=" * 50)
+        print(f"Total parameters: {format_parameter_count(param_counts['total'])} ({param_counts['total']:,})")
+        print(f"Trainable parameters: {format_parameter_count(param_counts['trainable'])} ({param_counts['trainable']:,})")
+        print(f"Frozen parameters: {format_parameter_count(param_counts['frozen'])} ({param_counts['frozen']:,})")
+        print(f"Trainable percentage: {(param_counts['trainable'] / param_counts['total']) * 100:.2f}%")
+        print(f"Frozen percentage: {(param_counts['frozen'] / param_counts['total']) * 100:.2f}%")
+        print("=" * 50)
+        
+        return param_counts
+    
+    def get_generation_config(self) -> GenerationConfig:
+        """
+        Get generation configuration for inference.
+        
+        Returns:
+            GenerationConfig: Generation configuration
+        """
+        eval_config = self.config.get('evaluation', {})
+        
+        return GenerationConfig(
+            max_new_tokens=eval_config.get('max_new_tokens', 512),
+            num_beams=eval_config.get('num_beams', 4),
+            length_penalty=eval_config.get('length_penalty', 0.6),
+            no_repeat_ngram_size=eval_config.get('no_repeat_ngram_size', 3),
+            early_stopping=eval_config.get('early_stopping', True),
+            do_sample=False,
+            temperature=1.0,
+            top_p=1.0,
+            pad_token_id=self.tokenizer.pad_token_id,
+            eos_token_id=self.tokenizer.eos_token_id
+        )
+
+
+def build_model_with_full_finetuning(config: Dict[str, Any]) -> FLANT5FullFinetuningModel:
+    """
+    Build FLAN-T5 model for full fine-tuning (no LoRA).
+    
+    This is the main factory function for creating FLAN-T5 models for full
+    fine-tuning on the BioLaySumm translation task.
+    
+    Args:
+        config (dict): Configuration dictionary containing model settings
+        
+    Returns:
+        FLANT5FullFinetuningModel: Configured model wrapper for full fine-tuning
+        
+    Example:
+        >>> config = load_config('configs/train_t5_small_full.yaml')
+        >>> model_wrapper = build_model_with_full_finetuning(config)
+        >>> model, tokenizer = model_wrapper.get_model_and_tokenizer()
+        >>> param_info = model_wrapper.count_params()
+    """
+    return FLANT5FullFinetuningModel(config)

@@ -1,0 +1,53 @@
+# Extreme Ultra-Fast Test Configuration (5 minutes max)
+# This config is designed for the absolute fastest validation
+
+# Model configuration
+model:
+  name: "google/flan-t5-base"
+  strategy: "lora"
+  lora_config:
+    r: 4          # Smaller rank
+    lora_alpha: 8 # Smaller alpha
+    target_modules: ["q"]  # Only query projections
+    lora_dropout: 0.0     # No dropout
+    bias: "none"
+    task_type: "SEQ_2_SEQ_LM"
+
+# Dataset configuration - EXTREMELY SMALL
+dataset:
+  name: "BioLaySumm/BioLaySumm2025-LaymanRRG-opensource-track"
+  max_samples: 5    # Only 5 samples!
+  max_length: 32    # Very short sequences
+  train_split: "train"
+  val_split: "validation"
+  test_split: "test"
+
+# Training configuration - MINIMAL
+training:
+  epochs: 1
+  batch_size: 1     # Single sample batch
+  learning_rate: 1e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  warmup_steps: 0   # No warmup
+  max_steps: 2      # Only 2 training steps!
+  logging_steps: 1
+  eval_steps: 2
+  save_steps: 2
+  eval_strategy: "steps"
+  save_strategy: "steps"
+  load_best_model_at_end: false
+  report_to: "none"
+  gradient_accumulation_steps: 1
+  dataloader_num_workers: 0
+  remove_unused_columns: false
+  seed: 42
+  bf16: false
+  fp16: false       # Disable mixed precision
+
+# Output configuration
+output:
+  root_dir: "reports/extreme_fast_test"
+  project_name: "extreme_fast_test"
+  save_config: false
+  save_logs: false

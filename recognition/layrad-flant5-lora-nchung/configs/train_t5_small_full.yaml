@@ -86,7 +86,7 @@ distributed:
 output:
   output_dir: "./checkpoints/t5-small-full-biolaysumm"
   run_name: "t5-small-full-biolaysumm"
-  report_to: ["tensorboard"]  # Logging backends
+  report_to: []  # No logging backends for cluster runs
   hub_model_id: null          # HuggingFace Hub model ID (if pushing)
 
 # Reproducibility

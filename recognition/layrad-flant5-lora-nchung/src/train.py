@@ -372,25 +372,13 @@ class BioLaySummTrainer:
         Returns:
             Model wrapper for full fine-tuning
         """
-        from modules import FLANT5LoRAModel
+        from modules import build_model_with_full_finetuning
         
-        # Create a model wrapper but without LoRA
-        model_wrapper = FLANT5LoRAModel(self.config)
-        
-        # Override the LoRA application to skip it
-        original_apply_lora = model_wrapper._apply_lora
-        
-        def skip_lora():
-            print("⚠️  Skipping LoRA application - using full fine-tuning")
-            print("🔧 All model parameters will be trainable")
-        
-        model_wrapper._apply_lora = skip_lora
-        
-        # Build the model without LoRA
-        model_wrapper._build_model()
+        # Create a proper full fine-tuning model wrapper
+        model_wrapper = build_model_with_full_finetuning(self.config)
         
         # Enable gradient checkpointing if specified
-        full_ft_config = self.config.get('full_finetuning_settings', {})
+        full_ft_config = self.config.get('full_finetuning', {})
         if full_ft_config.get('gradient_checkpointing', False):
             model_wrapper.model.gradient_checkpointing_enable()
             print("✅ Gradient checkpointing enabled")

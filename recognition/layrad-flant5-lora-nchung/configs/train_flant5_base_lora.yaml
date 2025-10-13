@@ -41,7 +41,7 @@ training:
   # Logging and checkpointing
   logging_steps: 100          # Log every N steps
   save_steps: 1000            # Save checkpoint every N steps
-  eval_steps: 1000            # Evaluate every N steps
+  eval_steps: 500             # Evaluate every N steps
   save_total_limit: 3         # Keep only last N checkpoints
 
 # LoRA Configuration (Parameter-Efficient Fine-Tuning)
@@ -73,6 +73,8 @@ evaluation:
   
   # Evaluation strategy
   eval_strategy: "steps"      # Evaluate every N steps
+  save_strategy: "steps"      # Save every N steps
+  load_best_model_at_end: true # Load best model at end
   metric_for_best_model: "rougeLsum"  # Best model selection metric
   greater_is_better: true     # Higher ROUGE scores are better
 
@@ -92,7 +94,7 @@ distributed:
 output:
   output_dir: "./checkpoints/flan-t5-base-lora-biolaysumm"
   run_name: "flan-t5-base-lora-biolaysumm"
-  report_to: ["tensorboard"]  # Logging backends
+  report_to: []  # No logging backends for cluster runs
   hub_model_id: null          # HuggingFace Hub model ID (if pushing)
 
 # Reproducibility

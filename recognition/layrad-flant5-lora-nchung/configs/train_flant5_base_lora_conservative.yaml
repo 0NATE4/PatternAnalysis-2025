@@ -1,0 +1,85 @@
+# FLAN-T5 Base LoRA Training Configuration - Conservative Test
+# BioLaySumm Expert-to-Layperson Radiology Report Translation
+# Author: Nathan Chung
+# Course: COMP3710 Pattern Analysis
+
+# Dataset Configuration
+dataset:
+  name: "BioLaySumm/BioLaySumm2025-LaymanRRG-opensource-track"
+  max_source_length: 256      # Shorter for memory efficiency
+  max_target_length: 128      # Shorter for memory efficiency
+  seed: 42                    # Random seed for reproducible shuffling
+  local_data_path: null       # Optional local data path override
+
+# Model Configuration
+model:
+  name: "google/flan-t5-base"  # Base FLAN-T5 model
+  torch_dtype: "bfloat16"      # Mixed precision for memory efficiency
+
+# Training Configuration
+training:
+  strategy: "lora"            # Training strategy: 'lora' or 'full'
+  batch_size: 4               # Smaller batch size for memory safety
+  gradient_accumulation_steps: 2  # Effective batch size = 4 * 2 = 8
+  learning_rate: 1e-4         # Learning rate for LoRA
+  num_epochs: 1               # Just 1 epoch for testing
+  warmup_steps: 100           # Shorter warmup
+  weight_decay: 0.01          # L2 regularization
+  max_grad_norm: 1.0          # Gradient clipping
+  
+  # Evaluation and logging
+  eval_steps: 500             # Evaluate every 500 steps
+  save_steps: 500             # Save checkpoint every 500 steps
+  logging_steps: 100          # Log every 100 steps
+  eval_strategy: "steps"
+  save_strategy: "steps"
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_rougeLsum"
+  greater_is_better: true
+  
+  # Reproducibility
+  seed: 42
+  data_seed: 42
+  
+  # Performance
+  dataloader_num_workers: 0   # No multiprocessing for stability
+  remove_unused_columns: false
+  
+  # Mixed precision
+  bf16: true
+  fp16: false
+
+# LoRA Configuration
+lora:
+  r: 8                        # LoRA rank
+  alpha: 16                   # LoRA alpha (typically 2*r)
+  dropout: 0.1                # LoRA dropout
+  target_modules: ["q", "v"]  # Target modules for LoRA
+  bias: "none"                # Bias training strategy
+
+# Output Configuration
+output:
+  root_dir: "reports"
+  project_name: "flan-t5-base-lora-biolaysumm-conservative"
+  save_config: true
+  save_logs: true
+
+# Reproducibility Configuration
+reproducibility:
+  seed: 42
+  data_seed: 42
+  model_seed: 42
+
+# Hardware Configuration
+hardware:
+  dataloader_num_workers: 0   # Conservative: no multiprocessing
+  pin_memory: true
+  gradient_checkpointing: false  # Disable for LoRA (not needed)
+
+# Evaluation Configuration
+evaluation:
+  max_new_tokens: 128         # Shorter generation for speed
+  num_beams: 4
+  length_penalty: 0.6
+  no_repeat_ngram_size: 3
+  early_stopping: true

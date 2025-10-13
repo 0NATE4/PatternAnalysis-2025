@@ -78,23 +78,7 @@ conda run -n torch torchrun \
   --standalone \
   --nproc_per_node=1 \
   src/train.py \
-  --config "$CONFIG" \
-  --training.epochs "$EPOCHS" \
-  --training.batch_size "$BS" \
-  --training.learning_rate "$LR" \
-  --training.strategy "$STRATEGY" \
-  --training.output_dir "$OUT_ROOT/checkpoints" \
-  --training.seed "$RANDOM_SEED" \
-  --training.logging_steps 100 \
-  --training.eval_steps 500 \
-  --training.save_steps 1000 \
-  --training.evaluation_strategy steps \
-  --training.save_strategy steps \
-  --training.load_best_model_at_end true \
-  --training.metric_for_best_model rougeLsum \
-  --training.greater_is_better true \
-  --training.report_to none \
-  --training.gradient_checkpointing true
+  "$CONFIG"
 
 # Check if training completed successfully
 if [ $? -eq 0 ]; then

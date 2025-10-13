@@ -435,24 +435,20 @@ def main():
     """
     Main evaluation function.
     """
-    import argparse
+    import sys
     
-    parser = argparse.ArgumentParser(description='Evaluate FLAN-T5 LoRA model on BioLaySumm test set')
-    parser.add_argument('--model_path', type=str, required=True,
-                       help='Path to the trained model directory')
-    parser.add_argument('--config', type=str, default='configs/train_flant5_base_lora.yaml',
-                       help='Path to configuration file')
-    parser.add_argument('--max_samples', type=int, default=None,
-                       help='Maximum number of samples to evaluate (default: all)')
-    
-    args = parser.parse_args()
+    # Get config file from command line or use default
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'configs/train_flant5_base_lora.yaml'
     
     # Load configuration
-    config = load_config(args.config)
+    config = load_config(config_file)
+    
+    # Get model path from config (look for checkpoints directory)
+    model_path = config.get('output', {}).get('output_dir', './checkpoints/flan-t5-base-lora-biolaysumm')
     
     # Create evaluator and run evaluation
-    evaluator = BioLaySummEvaluator(config, args.model_path)
-    results = evaluator.evaluate(max_samples=args.max_samples)
+    evaluator = BioLaySummEvaluator(config, model_path)
+    results = evaluator.evaluate()
     
     return results
 
