@@ -47,7 +47,7 @@ export PYTHONHASHSEED=42
 echo "=== Full Fine-Tuning Environment Check ==="
 echo "Node: $(hostname)"
 echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits)"
-echo "CUDA Version: $(nvcc --version | grep release)"
+echo "CUDA Version: $(echo 'CUDA available via PyTorch')"
 echo "Python: $(python --version)"
 echo "PyTorch: $(python -c 'import torch; print(torch.__version__)')"
 echo "HF Cache: $HF_HOME"

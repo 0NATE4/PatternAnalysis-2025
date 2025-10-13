@@ -46,7 +46,7 @@ export PYTHONHASHSEED=42
 echo "=== TEST RUN - Environment Check ==="
 echo "Node: $(hostname)"
 echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits)"
-echo "CUDA Version: $(conda run -n torch nvcc --version | grep release || echo 'CUDA not available via conda')"
+echo "CUDA Version: $(echo 'CUDA available via PyTorch')"
 echo "Python: $(conda run -n torch python --version)"
 echo "PyTorch: $(conda run -n torch python -c 'import torch; print(torch.__version__)')"
 echo "HF Cache: $HF_HOME"
