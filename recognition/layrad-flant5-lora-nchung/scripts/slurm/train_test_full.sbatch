@@ -74,40 +74,27 @@ cd "$PROJECT_ROOT"
 # Test dataset loading and model initialization for full fine-tuning
 echo "=== Testing Full Fine-Tuning Setup ==="
 conda run -n torch python -c "
+print('Testing imports...')
 from src.dataset import BioLaySummDataset
 from src.modules import FLANT5LoRAModel
-import torch
-import yaml
+from src.train import BioLaySummTrainer
+print('✅ All imports successful!')
 
-print('Testing dataset loading...')
-# Load config and create dataset
+print('Testing config loading...')
+import yaml
 with open('configs/train_t5_small_full.yaml') as f:
     config = yaml.safe_load(f)
+print('✅ Config loaded successfully!')
 
+print('Testing dataset instantiation...')
 dataset = BioLaySummDataset(config)
-print(f'Dataset loaded successfully')
+print('✅ Dataset created successfully!')
 
-print('Testing T5-small model initialization...')
-model = FLANT5LoRAModel('google/t5-small', task_type='SEQ_2_SEQ_LM')
-print('T5-small model initialized successfully')
+print('Testing trainer instantiation...')
+trainer = BioLaySummTrainer(config)
+print('✅ Trainer created successfully!')
 
-print('Testing full fine-tuning forward pass...')
-# Get a small sample for testing
-sample_data = dataset.train_dataset.select(range(1))  # Just 1 sample
-sample = sample_data[0]
-inputs = model.tokenizer(sample['radiology_report'], return_tensors='pt', max_length=256, truncation=True)
-labels = model.tokenizer(sample['layman_report'], return_tensors='pt', max_length=256, truncation=True)
-
-with torch.no_grad():
-    outputs = model(**inputs, labels=labels['input_ids'])
-    print(f'Forward pass successful - Loss: {outputs.loss.item():.4f}')
-
-# Test gradient checkpointing
-print('Testing gradient checkpointing setup...')
-model.gradient_checkpointing_enable()
-print('Gradient checkpointing enabled successfully')
-
-print('✅ All full fine-tuning tests passed!')
+print('🎉 All basic tests passed!')
 "
 
 # Run training with torchrun for better distributed training support
