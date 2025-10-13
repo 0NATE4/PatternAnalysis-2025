@@ -279,7 +279,7 @@ class BioLaySummTrainer:
             gradient_checkpointing=self._should_enable_gradient_checkpointing(),
             
             # Evaluation
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             eval_steps=training_config.get('eval_steps', 1000),
             save_strategy="steps",
             save_steps=training_config.get('save_steps', 1000),
