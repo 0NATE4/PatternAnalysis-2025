@@ -55,7 +55,7 @@ echo ""
 
 # Install required packages (if needed)
 echo "=== Installing Dependencies ==="
-conda run -n torch pip install -q transformers datasets accelerate evaluate rouge-score peft
+conda run -n torch pip install -q transformers datasets accelerate evaluate rouge-score peft tensorboard
 
 # Print configuration
 echo "=== Full Fine-Tuning Configuration ==="
