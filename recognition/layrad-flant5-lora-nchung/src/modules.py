@@ -26,7 +26,7 @@ from peft import (
     PeftModel
 )
 
-from utils import count_parameters, format_parameter_count
+from .utils import count_parameters, format_parameter_count
 
 
 class FLANT5LoRAModel:
