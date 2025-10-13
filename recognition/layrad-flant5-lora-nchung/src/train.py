@@ -180,13 +180,25 @@ class BioLaySummTrainer:
         print("Loading validation dataset...")
         val_dataset = self.dataset_loader.load_data('validation')
         
-        # Create data loaders
-        print("Creating data loaders...")
-        train_dataloader = self.dataset_loader.get_loader(
-            train_dataset, tokenizer, self.config['training']['batch_size']
+        # Tokenize datasets for training
+        print("Tokenizing training dataset...")
+        train_dataset = train_dataset.map(
+            lambda examples: self.dataset_loader.preprocess_function(examples, tokenizer),
+            batched=True,
+            num_proc=1,
+            load_from_cache_file=False,
+            remove_columns=["input_text", "target_text", "source", "images_path"],
+            desc="Tokenizing training dataset"
         )
-        val_dataloader = self.dataset_loader.get_loader(
-            val_dataset, tokenizer, self.config['training']['batch_size']
+        
+        print("Tokenizing validation dataset...")
+        val_dataset = val_dataset.map(
+            lambda examples: self.dataset_loader.preprocess_function(examples, tokenizer),
+            batched=True,
+            num_proc=1,
+            load_from_cache_file=False,
+            remove_columns=["input_text", "target_text", "source", "images_path"],
+            desc="Tokenizing validation dataset"
         )
         
         print(f"Training samples: {len(train_dataset)}")

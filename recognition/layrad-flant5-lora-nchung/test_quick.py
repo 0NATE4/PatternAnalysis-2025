@@ -33,12 +33,22 @@ def quick_test():
         print("3. Testing dataset...")
         dataset = BioLaySummDataset(config)
         train_data = dataset.load_data('train')
-        print(f"   ✅ Dataset OK - {len(train_data)} samples")
+        print(f"   ✅ Dataset loaded - {len(train_data)} samples")
         
-        # Test model
-        print("4. Testing model...")
+        # Test tokenization
+        print("4. Testing tokenization...")
         model_wrapper = build_model_with_lora(config)
-        print(f"   ✅ Model OK - {type(model_wrapper).__name__}")
+        model, tokenizer = model_wrapper.get_model_and_tokenizer()
+        tokenized_data = train_data.map(
+            lambda examples: dataset.preprocess_function(examples, tokenizer),
+            batched=True,
+            num_proc=1,
+            load_from_cache_file=False,
+            remove_columns=["input_text", "target_text", "source", "images_path"],
+            desc="Tokenizing dataset"
+        )
+        print(f"   ✅ Tokenization OK - {len(tokenized_data)} samples")
+        print(f"   Sample keys: {list(tokenized_data[0].keys())}")
         
         # Test trainer
         print("5. Testing trainer...")
