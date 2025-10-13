@@ -25,12 +25,25 @@ from transformers import (
 from datasets import Dataset
 from peft import PeftModel
 
-from .utils import (
-    load_config, setup_reproducibility, get_device, 
-    create_reports_dir, log_training_arguments
-)
-from .dataset import BioLaySummDataset
-from .modules import FLANT5LoRAModel
+# Handle imports for both direct execution and module import
+try:
+    from .utils import (
+        load_config, setup_reproducibility, get_device, 
+        create_reports_dir, log_training_arguments
+    )
+    from .dataset import BioLaySummDataset
+    from .modules import FLANT5LoRAModel
+except ImportError:
+    # Direct execution - add current directory to path
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent))
+    from utils import (
+        load_config, setup_reproducibility, get_device, 
+        create_reports_dir, log_training_arguments
+    )
+    from dataset import BioLaySummDataset
+    from modules import FLANT5LoRAModel
 
 
 class BioLaySummEvaluator:

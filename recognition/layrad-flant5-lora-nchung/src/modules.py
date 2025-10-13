@@ -26,7 +26,15 @@ from peft import (
     PeftModel
 )
 
-from .utils import count_parameters, format_parameter_count
+# Handle imports for both direct execution and module import
+try:
+    from .utils import count_parameters, format_parameter_count
+except ImportError:
+    # Direct execution - add current directory to path
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent))
+    from utils import count_parameters, format_parameter_count
 
 
 class FLANT5LoRAModel:

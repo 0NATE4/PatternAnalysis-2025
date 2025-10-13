@@ -13,7 +13,7 @@ import os
 import time
 import json
 import torch
-import evaluate
+import evaluate as evaluate_lib
 import numpy as np
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -25,12 +25,25 @@ from transformers import (
 )
 from datasets import Dataset
 
-from .utils import (
-    load_config, setup_reproducibility, get_device, create_output_dir, save_config,
-    setup_logging, log_training_arguments, log_trainer_state, log_training_summary
-)
-from .dataset import BioLaySummDataset
-from .modules import build_model_with_lora
+# Handle imports for both direct execution and module import
+try:
+    from .utils import (
+        load_config, setup_reproducibility, get_device, create_output_dir, save_config,
+        setup_logging, log_training_arguments, log_trainer_state, log_training_summary
+    )
+    from .dataset import BioLaySummDataset
+    from .modules import build_model_with_lora
+except ImportError:
+    # Direct execution - add current directory to path
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent))
+    from utils import (
+        load_config, setup_reproducibility, get_device, create_output_dir, save_config,
+        setup_logging, log_training_arguments, log_trainer_state, log_training_summary
+    )
+    from dataset import BioLaySummDataset
+    from modules import build_model_with_lora
 
 
 class BioLaySummTrainer:
