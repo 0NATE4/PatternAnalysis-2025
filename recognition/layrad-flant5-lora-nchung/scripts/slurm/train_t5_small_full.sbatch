@@ -72,13 +72,9 @@ echo ""
 # Change to project directory
 cd "$PROJECT_ROOT"
 
-# Run training with torchrun for better distributed training support
+# Run training with regular python (single GPU, no distributed training)
 echo "=== Starting T5-small Full Fine-Tuning ==="
-conda run -n torch torchrun \
-  --standalone \
-  --nproc_per_node=1 \
-  src/train.py \
-  "$CONFIG"
+conda run -n torch python src/train.py "$CONFIG"
 
 # Check if training completed successfully
 if [ $? -eq 0 ]; then
