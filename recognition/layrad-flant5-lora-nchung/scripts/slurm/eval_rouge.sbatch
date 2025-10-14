@@ -6,10 +6,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
-#SBATCH --time=24:00:00
+#SBATCH --time=50:00:00
 
 # Email notifications (optional)
 #SBATCH --mail-type=BEGIN,END,FAIL
