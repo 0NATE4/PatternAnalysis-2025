@@ -12,6 +12,7 @@ Course: COMP3710 Pattern Analysis
 import os
 import time
 import json
+import multiprocessing
 import torch
 import evaluate as evaluate_lib
 import numpy as np
@@ -612,4 +613,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # Set multiprocessing start method to 'spawn' to avoid CUDA fork issues with torchrun
+    multiprocessing.set_start_method('spawn', force=True)
     main()

@@ -72,9 +72,13 @@ echo ""
 # Change to project directory
 cd "$PROJECT_ROOT"
 
-# Run training with regular python (single GPU, no distributed training)
+# Run training with torchrun for distributed training support
 echo "=== Starting FLAN-T5 LoRA Training ==="
-conda run -n torch python src/train.py "$CONFIG"
+conda run -n torch torchrun \
+  --standalone \
+  --nproc_per_node=1 \
+  src/train.py \
+  "$CONFIG"
 
 # Check if training completed successfully
 if [ $? -eq 0 ]; then
