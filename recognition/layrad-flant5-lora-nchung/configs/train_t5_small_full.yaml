@@ -13,7 +13,7 @@ dataset:
 
 # Model Configuration
 model:
-  name: "t5-small"            # T5-Small model (60M parameters, more manageable for full FT)
+  name: "google/t5-small"     # T5-Small model (60M parameters, more manageable for full FT)
   torch_dtype: "bfloat16"     # Mixed precision for memory efficiency
 
 # Training Configuration

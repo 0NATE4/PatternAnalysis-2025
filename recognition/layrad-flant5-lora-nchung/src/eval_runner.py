@@ -76,18 +76,36 @@ class BioLaySummEvaluator:
         
     def load_model_and_tokenizer(self) -> None:
         print("\nLoading trained model and tokenizer...")
+        
+        # Detect training strategy from config
+        strategy = self.config.get('training', {}).get('strategy', 'lora')
         base_model_name = self.config.get('model', {}).get('name', 'google/flan-t5-base')
-        self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
-        self.base_model = AutoModelForSeq2SeqLM.from_pretrained(
-            base_model_name,
-            torch_dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
-            device_map="auto" if self.device.type == 'cuda' else None
-        )
-        if self.model_path.exists():
+        
+        if not self.model_path.exists():
+            raise FileNotFoundError(f"Model directory not found: {self.model_path}")
+        
+        if strategy == 'full':
+            # Load full fine-tuned model directly
+            print("Loading full fine-tuned model...")
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                str(self.model_path),
+                torch_dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
+                device_map="auto" if self.device.type == 'cuda' else None
+            )
+            self.tokenizer = AutoTokenizer.from_pretrained(str(self.model_path))
+            print(f"✅ Full fine-tuned model loaded from: {self.model_path}")
+        else:
+            # Load LoRA adapter (existing code)
+            print("Loading LoRA adapter...")
+            self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
+            self.base_model = AutoModelForSeq2SeqLM.from_pretrained(
+                base_model_name,
+                torch_dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
+                device_map="auto" if self.device.type == 'cuda' else None
+            )
             self.model = PeftModel.from_pretrained(self.base_model, str(self.model_path))
             print(f"✅ LoRA adapter loaded from: {self.model_path}")
-        else:
-            raise FileNotFoundError(f"Model directory not found: {self.model_path}")
+        
         if self.device.type == 'cpu':
             self.model = self.model.to(self.device)
         generation_config_path = self.model_path / 'generation_config.json'

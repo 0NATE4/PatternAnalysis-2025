@@ -433,6 +433,10 @@ class FLANT5FullFinetuningModel:
             trust_remote_code=False
         )
         
+        # Disable cache for gradient checkpointing compatibility
+        self.model.config.use_cache = False
+        print("Model cache disabled for gradient checkpointing")
+        
         print("Full fine-tuning model loaded successfully")
     
     def _load_tokenizer(self):
