@@ -123,7 +123,7 @@ class BioLaySummDataset:
             dataset = load_dataset(
                 self.dataset_name,
                 split=split,
-                trust_remote_code=True  # Required for some datasets
+                trust_remote_code=False  # Disabled to avoid deprecation warnings
             )
             return dataset
         except Exception as e:

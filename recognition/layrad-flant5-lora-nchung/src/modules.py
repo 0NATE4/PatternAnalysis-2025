@@ -99,14 +99,14 @@ class FLANT5LoRAModel:
         if torch.cuda.is_available():
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 model_name,
-                torch_dtype=torch_dtype,
+                dtype=torch_dtype,
                 device_map="auto"
             )
         else:
             # CPU-only loading
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 model_name,
-                torch_dtype=torch.float32  # Use float32 for CPU
+                dtype=torch.float32  # Use float32 for CPU
             )
         
         # Apply LoRA configuration

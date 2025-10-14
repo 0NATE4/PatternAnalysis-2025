@@ -86,7 +86,7 @@ class ZeroShotBaseline:
         # Load the base model without any adapters
         self.model = AutoModelForSeq2SeqLM.from_pretrained(
             base_model_name,
-            torch_dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
+            dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
             device_map="auto" if self.device.type == 'cuda' else None
         )
         

@@ -89,7 +89,7 @@ class BioLaySummEvaluator:
             print("Loading full fine-tuned model...")
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 str(self.model_path),
-                torch_dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
+                dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
                 device_map="auto" if self.device.type == 'cuda' else None
             )
             self.tokenizer = AutoTokenizer.from_pretrained(str(self.model_path))
@@ -100,7 +100,7 @@ class BioLaySummEvaluator:
             self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
             self.base_model = AutoModelForSeq2SeqLM.from_pretrained(
                 base_model_name,
-                torch_dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
+                dtype=torch.float32 if self.device.type == 'cpu' else torch.bfloat16,
                 device_map="auto" if self.device.type == 'cuda' else None
             )
             self.model = PeftModel.from_pretrained(self.base_model, str(self.model_path))

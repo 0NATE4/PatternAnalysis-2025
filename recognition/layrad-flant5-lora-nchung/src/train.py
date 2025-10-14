@@ -158,6 +158,17 @@ class BioLaySummTrainer:
         # Validate and determine training strategy
         training_strategy = self._validate_training_strategy()
         
+        # Initialize dataset loader first (before loading model to avoid CUDA fork issues)
+        self.dataset_loader = BioLaySummDataset(self.config)
+        
+        # Load datasets
+        print("Loading training dataset...")
+        train_dataset = self.dataset_loader.load_data('train')
+        
+        print("Loading validation dataset...")
+        val_dataset = self.dataset_loader.load_data('validation')
+        
+        # Load model and tokenizer after dataset loading (to avoid CUDA fork issues)
         if training_strategy == 'full':
             print("🔧 Using FULL FINE-TUNING strategy")
             self.model_wrapper = self._build_full_finetuning_model()
@@ -169,16 +180,6 @@ class BioLaySummTrainer:
         
         # Print parameter information
         self.model_wrapper.count_params()
-        
-        # Initialize dataset loader
-        self.dataset_loader = BioLaySummDataset(self.config)
-        
-        # Load datasets
-        print("Loading training dataset...")
-        train_dataset = self.dataset_loader.load_data('train')
-        
-        print("Loading validation dataset...")
-        val_dataset = self.dataset_loader.load_data('validation')
         
         # Tokenize datasets for training
         print("Tokenizing training dataset...")
