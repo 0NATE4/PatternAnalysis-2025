@@ -518,6 +518,23 @@ class BioLaySummTrainer:
         return train_result
 
 
+# Global ROUGE metric (loaded once to avoid repeated loading during evaluation)
+_ROUGE_METRIC = None
+
+def _get_rouge_metric():
+    """
+    Lazy load ROUGE metric to avoid repeated loading and scope issues.
+    
+    This function ensures the ROUGE metric is loaded only once and reused
+    across all evaluation calls, preventing AttributeError with torchrun.
+    """
+    global _ROUGE_METRIC
+    if _ROUGE_METRIC is None:
+        import evaluate
+        _ROUGE_METRIC = evaluate.load('rouge')
+    return _ROUGE_METRIC
+
+
 def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
     """
     Compute ROUGE metrics for evaluation.
@@ -532,8 +549,8 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
     """
     predictions, labels = eval_preds
     
-    # Load ROUGE metric
-    rouge = evaluate_lib.load('rouge')
+    # Use pre-loaded ROUGE metric
+    rouge = _get_rouge_metric()
     
     # Decode predictions and labels
     # Predictions are token IDs, labels are token IDs with -100 for padding
