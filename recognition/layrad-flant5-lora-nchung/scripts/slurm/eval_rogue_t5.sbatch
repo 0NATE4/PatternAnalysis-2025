@@ -24,7 +24,7 @@ MAX_SAMPLES=${MAX_SAMPLES:-1000}
 
 # Project paths
 PROJECT_ROOT="$SLURM_SUBMIT_DIR"
-OUT_ROOT="$PROJECT_ROOT/reports/evaluation"
+OUT_ROOT="$MODEL_PATH/reports"
 
 # Ensure directories exist
 mkdir -p "$PROJECT_ROOT/logs" "$OUT_ROOT"
@@ -46,8 +46,8 @@ echo "=== Evaluation Environment Check ==="
 echo "Node: $(hostname)"
 echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader,nounits)"
 echo "CUDA Version: $(echo 'CUDA available via PyTorch')"
-echo "Python: $(python --version)"
-echo "PyTorch: $(python -c 'import torch; print(torch.__version__)')"
+echo "Python: $(conda run -n torch python --version)"
+echo "PyTorch: $(conda run -n torch python -c 'import torch; print(torch.__version__)')"
 echo "HF Cache: $HF_HOME"
 echo ""
 
