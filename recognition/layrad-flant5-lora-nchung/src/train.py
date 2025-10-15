@@ -259,7 +259,8 @@ class BioLaySummTrainer:
             early_stopping=eval_config.get('early_stopping', True),
             do_sample=False,  # Deterministic generation for evaluation
             pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.tokenizer.eos_token_id
+            eos_token_id=self.tokenizer.eos_token_id,
+            decoder_start_token_id=self.tokenizer.pad_token_id  # Required for T5 encoder-decoder generation
         )
     
     def _create_training_arguments(self) -> Seq2SeqTrainingArguments:
@@ -549,8 +550,7 @@ def _get_rouge_metric():
     """
     global _ROUGE_METRIC
     if _ROUGE_METRIC is None:
-        import evaluate
-        _ROUGE_METRIC = evaluate.load('rouge')
+        _ROUGE_METRIC = evaluate_lib.load('rouge')
     return _ROUGE_METRIC
 
 
