@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH --job-name=flant5_lora_eval
+#SBATCH --job-name=t5_small_eval
 #SBATCH --partition=a100
 #SBATCH --gres=gpu:a100:1
 #SBATCH --nodes=1
@@ -18,7 +18,7 @@ set -euo pipefail
 
 # Config (override via: sbatch --export=ALL,MODEL_PATH=reports/checkpoints,... scripts/slurm/eval_rouge.sbatch)
 MODEL_PATH=${MODEL_PATH:-reports/checkpoints}
-CONFIG=${CONFIG:-configs/train_flant5_base_lora.yaml}
+CONFIG=${CONFIG:-configs/train_t5_small_full.yaml}
 SPLIT=${SPLIT:-test}
 MAX_SAMPLES=${MAX_SAMPLES:-1000}
 
