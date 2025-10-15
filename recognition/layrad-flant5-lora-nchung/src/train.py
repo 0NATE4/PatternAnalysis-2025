@@ -9,11 +9,26 @@ Author: Nathan Chung
 Course: COMP3710 Pattern Analysis
 """
 
+# Set multiprocessing start method first thing to avoid CUDA fork issues
+import multiprocessing as mp
+try:
+    mp.set_start_method("spawn", force=True)
+except RuntimeError:
+    pass
+
 import os
 import time
 import json
-import multiprocessing
 import torch
+
+# Disable HF datasets multiprocessing entirely
+os.environ["HF_DATASETS_DISABLE_MP"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+# A100 optimization flags
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import evaluate as evaluate_lib
 import numpy as np
 from pathlib import Path
@@ -187,7 +202,6 @@ class BioLaySummTrainer:
         train_dataset = train_dataset.map(
             lambda examples: self.dataset_loader.preprocess_function(examples, tokenizer),
             batched=True,
-            num_proc=1,  # Use 1 process to avoid CUDA fork issues
             load_from_cache_file=False,
             remove_columns=["input_text", "target_text", "source", "images_path"],
             desc="Tokenizing training dataset"
@@ -197,7 +211,6 @@ class BioLaySummTrainer:
         val_dataset = val_dataset.map(
             lambda examples: self.dataset_loader.preprocess_function(examples, tokenizer),
             batched=True,
-            num_proc=1,  # Use 1 process to avoid CUDA fork issues
             load_from_cache_file=False,
             remove_columns=["input_text", "target_text", "source", "images_path"],
             desc="Tokenizing validation dataset"
@@ -205,6 +218,10 @@ class BioLaySummTrainer:
         
         print(f"Training samples: {len(train_dataset)}")
         print(f"Validation samples: {len(val_dataset)}")
+        
+        # Diagnostic probe to verify spawn method and CUDA initialization order
+        print("Start method:", mp.get_start_method())
+        print("About to load model. CUDA initialised:", torch.cuda.is_initialized())
         
         self.model = model
         self.tokenizer = tokenizer
@@ -315,7 +332,7 @@ class BioLaySummTrainer:
             remove_unused_columns=False,  # Keep custom dataset columns
             
             # Performance
-            dataloader_num_workers=self.config.get('hardware', {}).get('dataloader_num_workers', 4),
+            dataloader_num_workers=0,  # Disable multiprocessing to avoid CUDA fork issues
             dataloader_pin_memory=self.config.get('hardware', {}).get('pin_memory', True),
             
             # Generation for evaluation
@@ -613,6 +630,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # Set multiprocessing start method to 'spawn' to avoid CUDA fork issues with torchrun
-    multiprocessing.set_start_method('spawn', force=True)
     main()

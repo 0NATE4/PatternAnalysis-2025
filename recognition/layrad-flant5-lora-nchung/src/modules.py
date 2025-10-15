@@ -428,7 +428,7 @@ class FLANT5FullFinetuningModel:
         # Load model for full fine-tuning (no LoRA)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(
             model_name,
-            torch_dtype=torch_dtype,
+            dtype=torch_dtype,
             device_map=None,  # We'll move to device manually
             trust_remote_code=False
         )
