@@ -573,54 +573,80 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
     
     Args:
         eval_preds: Evaluation predictions from HuggingFace Trainer
-            - predictions: List of generated texts
-            - label_ids: List of reference texts
+            - predictions: Generated token IDs (or logits if predict_with_generate=False)
+            - label_ids: Reference token IDs with -100 for padding
     
     Returns:
         Dict containing ROUGE-1, ROUGE-2, ROUGE-L, and ROUGE-Lsum scores
     """
+    import numpy as np
+    
     predictions, labels = eval_preds
-    
-    # Use pre-loaded ROUGE metric
-    rouge = _get_rouge_metric()
-    
-    # Decode predictions and labels
-    # Predictions are token IDs, labels are token IDs with -100 for padding
-    decoded_preds = []
-    decoded_labels = []
     
     # Get tokenizer from global scope (will be set by trainer)
     tokenizer = getattr(compute_rouge_metrics, 'tokenizer', None)
     if tokenizer is None:
         raise ValueError("Tokenizer not set for ROUGE computation")
     
-    # Decode predictions
-    for pred in predictions:
-        decoded_pred = tokenizer.decode(pred, skip_special_tokens=True)
-        decoded_preds.append(decoded_pred)
+    # Some trainers return a tuple (predictions, past_key_values)
+    if isinstance(predictions, tuple):
+        predictions = predictions[0]
     
-    # Decode labels (remove -100 tokens)
-    for label in labels:
-        # Remove -100 tokens (padding tokens in labels)
-        label = [token for token in label if token != -100]
-        decoded_label = tokenizer.decode(label, skip_special_tokens=True)
-        decoded_labels.append(decoded_label)
+    # Convert to numpy arrays for robust handling
+    preds = np.asarray(predictions)
     
-    # Compute ROUGE metrics
+    # Debug log on rank 0
+    if int(os.environ.get("RANK", "0")) == 0:
+        print(f"Predictions shape/dtype: {preds.shape}, {preds.dtype}", flush=True)
+    
+    # If predictions are logits (3D) or floats, convert to token IDs via argmax
+    if preds.ndim == 3 or not np.issubdtype(preds.dtype, np.integer):
+        preds = preds.argmax(axis=-1)
+    
+    # Ensure we have int64 for safe operations
+    pred_ids = preds.astype(np.int64, copy=False)
+    
+    # Get pad token ID and vocab size
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    vocab_size = getattr(tokenizer, 'vocab_size', None)
+    if vocab_size is None:
+        vocab_size = int(pred_ids.max() + 1)
+    
+    # Clamp invalid token IDs to pad_id (preserves sequence length, avoids OverflowError)
+    pred_ids = np.where((pred_ids >= 0) & (pred_ids < vocab_size), pred_ids, pad_id)
+    
+    # Handle labels: replace -100 with pad_id
+    labels = np.asarray(labels)
+    labels = np.where(labels != -100, labels, pad_id)
+    
+    # Batch decode for efficiency
+    decoded_preds = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+    
+    # Strip whitespace
+    decoded_preds = [p.strip() for p in decoded_preds]
+    decoded_labels = [l.strip() for l in decoded_labels]
+    
+    # Use pre-loaded ROUGE metric
+    rouge = _get_rouge_metric()
+    
+    # Compute ROUGE metrics (following radadapt pattern)
     rouge_results = rouge.compute(
         predictions=decoded_preds,
         references=decoded_labels,
-        use_aggregator=True,
         use_stemmer=True
     )
     
-    # Extract individual ROUGE scores
+    # Extract and scale scores to percentages
     metrics = {
-        'rouge1': rouge_results['rouge1'],
-        'rouge2': rouge_results['rouge2'],
-        'rougeL': rouge_results['rougeL'],
-        'rougeLsum': rouge_results['rougeLsum']
+        'rouge1': round(rouge_results['rouge1'] * 100, 4),
+        'rouge2': round(rouge_results['rouge2'] * 100, 4),
+        'rougeL': round(rouge_results['rougeL'] * 100, 4),
+        'rougeLsum': round(rouge_results['rougeLsum'] * 100, 4)
     }
+    
+    # Add average generation length as diagnostic
+    metrics['gen_len'] = float((pred_ids != pad_id).sum(axis=1).mean())
     
     return metrics
 
