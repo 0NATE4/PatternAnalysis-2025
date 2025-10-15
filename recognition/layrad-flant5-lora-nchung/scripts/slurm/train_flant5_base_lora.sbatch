@@ -33,6 +33,10 @@ mkdir -p "$PROJECT_ROOT/logs" "$OUT_ROOT"/{curves,checkpoints}
 export HF_HOME="$HOME/.cache/huggingface"
 mkdir -p "$HF_HOME"
 
+# Set shared HuggingFace cache to avoid per-rank downloads
+export HF_DATASETS_CACHE=$HF_HOME/datasets
+export TRANSFORMERS_CACHE=$HF_HOME/transformers
+
 # Set up environment variables
 export CUDA_VISIBLE_DEVICES=0
 export TOKENIZERS_PARALLELISM=false

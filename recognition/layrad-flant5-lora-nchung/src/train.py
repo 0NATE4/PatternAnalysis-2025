@@ -31,6 +31,18 @@ torch.backends.cudnn.allow_tf32 = True
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import evaluate as evaluate_lib
 import numpy as np
+
+# Preflight check: ensure we have the real Hugging Face evaluate package
+import evaluate as _ev
+import sys
+ev_path = getattr(_ev, "__file__", None)
+if not hasattr(_ev, "load"):
+    raise ImportError(
+        f"'evaluate' resolved to {ev_path}. "
+        f"This is not Hugging Face evaluate. "
+        f"Rename any local file or folder named 'evaluate'. "
+        f"sys.path[0] is {sys.path[0]}"
+    )
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from transformers import (
@@ -550,7 +562,8 @@ def _get_rouge_metric():
     """
     global _ROUGE_METRIC
     if _ROUGE_METRIC is None:
-        _ROUGE_METRIC = evaluate_lib.load('rouge')
+        from evaluate import load as hf_load
+        _ROUGE_METRIC = hf_load('rouge')
     return _ROUGE_METRIC
 
 
@@ -623,6 +636,11 @@ def main():
     
     # Load configuration
     config = load_config(config_file)
+    
+    # Log evaluate package location on rank 0 for debugging
+    if int(os.environ.get("RANK", "0")) == 0:
+        import evaluate as _ev
+        print(f"Using evaluate from: {getattr(_ev, '__file__', None)}", flush=True)
     
     # Create and run trainer
     trainer = BioLaySummTrainer(config)
