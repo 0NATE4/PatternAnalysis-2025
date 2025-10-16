@@ -286,6 +286,11 @@ recognition/layrad-flant5-lora-nchung/
 │   ├── run_train_local.sh             # Local training script
 │   ├── run_eval_local.sh              # Local evaluation script
 │   └── slurm/                         # Slurm cluster scripts
+│       ├── train_flant5_base_lora.sbatch     # Train LoRA model
+│       ├── train_t5_small_full.sbatch        # Train full fine-tuning model
+│       ├── eval_rouge.sbatch                 # Evaluate LoRA model
+│       ├── eval_rogue_t5.sbatch             # Evaluate full model
+│       └── eval_zeroshot_baseline.sbatch     # Zero-shot baseline evaluation
 ├── tests/
 │   └── test_dataset.py                # Dataset loading tests
 ├── reports/
@@ -320,6 +325,9 @@ bash scripts/run_train_local.sh
 
 # Evaluate model
 bash scripts/run_eval_local.sh
+
+# Run zero-shot baseline (local)
+python src/zeroshot_baseline.py --config configs/train_flant5_base_lora.yaml --max_samples 100
 ```
 
 ## Usage
@@ -626,13 +634,42 @@ checkpoints/flan-t5-base-lora-biolaysumm/
 - Checkpointing occurs every 1000 steps
 - Best model loaded at training end
 
+### Cluster Training and Evaluation
+
+**Training on Cluster:**
+```bash
+# Submit training jobs
+sbatch scripts/slurm/train_flant5_base_lora.sbatch
+sbatch scripts/slurm/train_t5_small_full.sbatch
+```
+
+**Evaluation on Cluster:**
+```bash
+# Run zero-shot baseline (untrained model)
+sbatch scripts/slurm/eval_zeroshot_baseline.sbatch
+
+# Evaluate trained models
+sbatch scripts/slurm/eval_rouge.sbatch
+sbatch scripts/slurm/eval_rogue_t5.sbatch
+
+# Quick test with limited samples
+sbatch --export=ALL,MAX_SAMPLES=1000 scripts/slurm/eval_zeroshot_baseline.sbatch
+```
+
+**Check Job Status:**
+```bash
+squeue -u $USER
+```
+
 ### Next Steps
 
 After training:
-1. **Evaluate** the model on test set
-2. **Generate** sample expert-to-layperson translations
-3. **Analyze** ROUGE metrics and training curves
-4. **Fine-tune** hyperparameters if needed
+1. **Run zero-shot baseline** to establish pre-training performance
+2. **Evaluate** the trained models on test set  
+3. **Compare** baseline vs trained ROUGE scores
+4. **Generate** sample expert-to-layperson translations
+5. **Analyze** ROUGE metrics and training curves
+6. **Fine-tune** hyperparameters if needed
 
 ## Contributing
 
