@@ -114,17 +114,36 @@ class ZeroShotBaseline:
         
     def load_test_dataset(self) -> None:
         """
-        Load the test dataset for zero-shot evaluation.
+        Load the eval dataset for zero-shot evaluation (configurable split).
         """
-        print("\nLoading test dataset...")
+        eval_split = self.config.get('dataset', {}).get('eval_split', 'validation')
+        print(f"\nLoading {eval_split} dataset...")
         
         # Initialize dataset loader
         self.dataset_loader = BioLaySummDataset(self.config)
         
-        # Load test dataset
-        self.test_dataset = self.dataset_loader.load_data('test')
+        # Load dataset
+        self.test_dataset = self.dataset_loader.load_data(eval_split)
         
-        print(f"✅ Test dataset loaded: {len(self.test_dataset)} samples")
+        print(f"✅ {eval_split.capitalize()} dataset loaded: {len(self.test_dataset)} samples")
+        
+        # Filter out empty targets to ensure valid ROUGE computation
+        def _non_empty(example):
+            return len(example.get('target_text', '').strip()) > 0
+        pre_count = len(self.test_dataset)
+        try:
+            self.test_dataset = self.test_dataset.filter(_non_empty)
+        except Exception:
+            self.test_dataset = self.test_dataset.filter(lambda x: len(x.get('target_text', '').strip()) > 0)
+        post_count = len(self.test_dataset)
+        removed = pre_count - post_count
+        print(f"Filtered empty references (baseline): {removed} removed, {post_count} remain")
+        self.diagnostics = {
+            'pre_count': pre_count,
+            'post_count': post_count,
+            'removed_empty_targets': removed,
+            'eval_split': eval_split,
+        }
         
         # Show sample
         if len(self.test_dataset) > 0:
@@ -293,7 +312,8 @@ class ZeroShotBaseline:
                 'fine_tuning': 'none',  # No fine-tuning for zero-shot
                 'lora_adapters': 'none',  # No LoRA for zero-shot
             },
-            'sample_predictions': predictions[:5]  # Include first 5 predictions as examples
+            'sample_predictions': predictions[:5],  # Include first 5 predictions as examples
+            'diagnostics': self.diagnostics if hasattr(self, 'diagnostics') else {}
         }
         
         # Save to JSON
@@ -302,6 +322,15 @@ class ZeroShotBaseline:
             json.dump(results_data, f, indent=2, ensure_ascii=False)
         
         print(f"✅ Zero-shot baseline results saved to: {results_path}")
+        # Also save standalone diagnostics for quick inspection
+        try:
+            with open(self.reports_dir / 'diagnostics.json', 'w', encoding='utf-8') as f:
+                json.dump({**(self.diagnostics if hasattr(self, 'diagnostics') else {}),
+                           'num_predictions': len(predictions),
+                           'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')}, f, indent=2, ensure_ascii=False)
+            print(f"✅ Diagnostics saved to: {self.reports_dir / 'diagnostics.json'}")
+        except Exception as e:
+            print(f"⚠️  Failed to write diagnostics.json: {e}")
     
     def print_baseline_summary(self, metrics: Dict[str, float]) -> None:
         """

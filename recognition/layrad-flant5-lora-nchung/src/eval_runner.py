@@ -157,10 +157,31 @@ class BioLaySummEvaluator:
         print("✅ Model and tokenizer loaded successfully")
         
     def load_test_dataset(self) -> None:
-        print("\nLoading test dataset...")
+        # Support configurable eval split; default to validation per teaching guidance
+        eval_split = self.config.get('dataset', {}).get('eval_split', 'validation')
+        print(f"\nLoading {eval_split} dataset...")
         self.dataset_loader = BioLaySummDataset(self.config)
-        self.test_dataset = self.dataset_loader.load_data('test')
-        print(f"✅ Test dataset loaded: {len(self.test_dataset)} samples")
+        self.test_dataset = self.dataset_loader.load_data(eval_split)
+        print(f"✅ {eval_split.capitalize()} dataset loaded: {len(self.test_dataset)} samples")
+        # Filter out samples with empty/whitespace targets to ensure valid ROUGE
+        def _non_empty(example):
+            return len(example.get('target_text', '').strip()) > 0
+        pre_count = len(self.test_dataset)
+        try:
+            self.test_dataset = self.test_dataset.filter(_non_empty)
+        except Exception:
+            # datasets.map/filter may pass index; handle gracefully
+            self.test_dataset = self.test_dataset.filter(lambda x: len(x.get('target_text', '').strip()) > 0)
+        post_count = len(self.test_dataset)
+        removed = pre_count - post_count
+        print(f"Filtered empty references: {removed} removed, {post_count} remain")
+        # Keep basic diagnostics for later saving
+        self.diagnostics = {
+            'pre_count': pre_count,
+            'post_count': post_count,
+            'removed_empty_targets': removed,
+            'eval_split': eval_split,
+        }
         if len(self.test_dataset) > 0:
             sample = self.test_dataset[0]
             print(f"Sample input: {sample['input_text'][:100]}...")
@@ -326,6 +347,17 @@ class BioLaySummEvaluator:
         self.save_rouge_summary(metrics)
         self.save_per_sample_results(predictions, metrics)
         self.save_generation_config()
+        # Save diagnostics
+        try:
+            with open(self.reports_dir / 'diagnostics.json', 'w', encoding='utf-8') as f:
+                json.dump({
+                    **getattr(self, 'diagnostics', {}),
+                    'num_predictions': len(predictions),
+                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                }, f, indent=2, ensure_ascii=False)
+            print(f"✅ Diagnostics saved to: {self.reports_dir / 'diagnostics.json'}")
+        except Exception as e:
+            print(f"⚠️  Failed to write diagnostics.json: {e}")
         print("\n" + "="*60)
         print("EVALUATION COMPLETE")
         print("="*60)
