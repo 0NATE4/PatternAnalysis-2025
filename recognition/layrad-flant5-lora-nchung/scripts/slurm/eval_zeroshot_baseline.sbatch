@@ -84,7 +84,7 @@ if [ $? -eq 0 ]; then
     if [ -f "$OUT_ROOT/reports/zeroshot_baseline_results.json" ]; then
         echo "✅ Results saved: zeroshot_baseline_results.json"
         echo "Zero-shot baseline metrics:"
-        python -c "
+        conda run -n torch python -c "
 import json
 try:
     with open('$OUT_ROOT/reports/zeroshot_baseline_results.json') as f:

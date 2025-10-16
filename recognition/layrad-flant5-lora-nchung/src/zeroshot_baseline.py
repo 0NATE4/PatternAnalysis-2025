@@ -107,6 +107,7 @@ class ZeroShotBaseline:
             do_sample=False,
             pad_token_id=self.tokenizer.pad_token_id,
             eos_token_id=self.tokenizer.eos_token_id,
+            decoder_start_token_id=self.tokenizer.pad_token_id,  # Required for T5 models
         )
         
         print("✅ Generation config configured")
@@ -186,6 +187,14 @@ class ZeroShotBaseline:
                     outputs[0], 
                     skip_special_tokens=True
                 )
+                
+                # Debug: Print first few examples to see what's being generated
+                if i < 3:
+                    print(f"DEBUG Sample {i+1}:")
+                    print(f"  Input: {input_text[:100]}...")
+                    print(f"  Target: {target_text[:100]}...")
+                    print(f"  Generated: {generated_text[:100]}...")
+                    print(f"  Generated length: {len(generated_text)} chars")
                 
                 # Store prediction
                 pred_data = {
