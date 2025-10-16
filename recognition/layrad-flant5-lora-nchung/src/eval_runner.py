@@ -65,7 +65,8 @@ class BioLaySummEvaluator:
     
     def __init__(self, config: Dict[str, Any], model_path: str):
         self.config = config
-        self.model_path = Path(model_path)
+        # Resolve model path to final_model if it exists
+        self.model_path = self._resolve_model_path(Path(model_path))
         
         setup_reproducibility(self.config)
         self.device = get_device(self.config)
@@ -73,6 +74,33 @@ class BioLaySummEvaluator:
         
         print(f"Evaluation setup complete. Model path: {self.model_path}")
         print(f"Reports directory: {self.reports_dir}")
+        
+    def _resolve_model_path(self, model_path: Path) -> Path:
+        """
+        Resolve model path, preferring final_model/ subdirectory if it exists.
+        
+        Training saves to output_dir/final_model/, but config points to output_dir.
+        This method auto-detects the correct path.
+        """
+        # If path doesn't exist, try final_model subdirectory
+        if not model_path.exists():
+            final_model_path = model_path / 'final_model'
+            if final_model_path.exists():
+                print(f"✅ Resolved model path: {model_path} → {final_model_path}")
+                return final_model_path
+        
+        # If path exists but doesn't have model files, check final_model
+        if model_path.exists():
+            has_lora = (model_path / 'adapter_config.json').exists()
+            has_full = (model_path / 'model.safetensors').exists() or (model_path / 'pytorch_model.bin').exists()
+            
+            if not has_lora and not has_full:
+                final_model_path = model_path / 'final_model'
+                if final_model_path.exists():
+                    print(f"✅ Model files found in subdirectory: {final_model_path}")
+                    return final_model_path
+        
+        return model_path
         
     def load_model_and_tokenizer(self) -> None:
         print("\nLoading trained model and tokenizer...")
