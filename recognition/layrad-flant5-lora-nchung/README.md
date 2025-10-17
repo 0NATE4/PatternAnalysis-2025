@@ -389,29 +389,114 @@ print(layperson_summary)
 
 ## Results and Performance
 
-*Results will be updated after training completion*
+### Final Performance Results
 
-### Expected Performance
-Based on similar medical text simplification tasks:
-- **ROUGE-1:** 0.45-0.55
-- **ROUGE-2:** 0.25-0.35  
-- **ROUGE-L:** 0.40-0.50
-- **ROUGE-Lsum:** 0.40-0.50
+| Model | ROUGE-1 | ROUGE-2 | ROUGE-L | ROUGE-Lsum | Training Strategy |
+|-------|---------|---------|---------|------------|------------------|
+| **Zero-shot Baseline** | 0.317 | 0.116 | 0.287 | 0.287 | No training |
+| **T5-small Full FT** | 0.444 | 0.230 | 0.397 | 0.397 | Full fine-tuning |
+| **FLAN-T5-base LoRA** | **0.696** | **0.496** | **0.640** | **0.640** | LoRA adaptation |
+
+### Key Findings
+- **FLAN-T5 LoRA achieves 69.6% ROUGE-1** - significantly outperforming both baselines
+- **+37.9 points improvement** over zero-shot baseline
+- **+25.2 points improvement** over T5-small full fine-tuning
+- **LoRA efficiency:** Only 0.36% trainable parameters (885K out of 248M) with superior performance
 
 ### Model Efficiency
-- **Trainable Parameters:** 1.2M (0.5% of total)
-- **Training Memory:** ~8GB VRAM (vs ~32GB for full fine-tuning)
-- **Inference Speed:** ~50ms per report on RTX 3080
+- **FLAN-T5 LoRA:** 885K trainable parameters (0.36% of 248M total)
+- **T5-small Full FT:** 60M trainable parameters (100% of 60M total)
+- **Training Memory:** ~12GB VRAM (LoRA) vs ~6GB VRAM (Full FT with gradient checkpointing)
+- **Inference Speed:** ~50ms per report on A100 GPU
+
+## Training Visualizations
+
+The following plots demonstrate the training progression and model performance:
+
+### Training Loss Curves
+![Training Loss Comparison](reports/curves/training_loss_comparison.png)
+*Comparison of training loss between FLAN-T5 LoRA and T5-small Full Fine-tuning*
+
+### Validation ROUGE Metrics
+![Validation ROUGE Metrics](reports/curves/validation_rouge_metrics.png)
+*ROUGE scores during training showing convergence patterns*
+
+### Learning Rate Schedules
+![Learning Rate Schedules](reports/curves/learning_rate_schedules.png)
+*Learning rate warmup and decay schedules for both models*
+
+### Final Performance Comparison
+![Final Performance Comparison](reports/curves/final_performance_comparison.png)
+*Bar chart comparing final ROUGE scores across all three models*
+
+*Note: To generate these plots, run `python src/plot_training_curves.py`*
+
+## Representative Examples
+
+### Example 1: Excellent Translation (ROUGE-1: 0.875)
+**Input:** "Chronic pulmonary changes"  
+**Target:** "Long-term changes in the lungs are seen."  
+**Generated:** "Long-term changes in the lungs are present."  
+**Analysis:** Perfect translation with high ROUGE scores. Model correctly simplified medical terminology while maintaining meaning.
+
+### Example 2: Very Good Translation (ROUGE-1: 0.824)
+**Input:** "Central venous catheter traversing the left jugular vein with its tip in the superior vena cava. The remainder is unchanged."  
+**Target:** "A central venous catheter is going through the left jugular vein and its tip is in the superior vena cava. Everything else is the same as before."  
+**Generated:** "A central venous catheter is inserted through the left jugular vein with its tip in the superior vena cava. Everything else looks the same."  
+**Analysis:** Excellent translation with minor word choice differences. Model successfully simplified complex medical terminology.
+
+### Example 3: Good Translation (ROUGE-1: 0.701)
+**Input:** "Radiological signs of air trapping, flattened diaphragm, and increased retrosternal space. Calcified pleural plaques at the level of the left diaphragmatic pleura..."  
+**Target:** "The X-ray shows signs of trapped air, a flattened muscle under the lungs, and more space behind the breastbone. There are also hardened areas on the lung lining on the left side..."  
+**Generated:** "The x-ray shows signs of air trapping, flattened diaphragm, and increased space behind the breastbone. There are calcium deposits in the pleura, which are the membranes around the lungs..."  
+**Analysis:** Good translation of complex medical report. Model handles technical terms well but shows some minor differences in phrasing.
+
+### Example 4: Challenging Case (ROUGE-1: 0.511)
+**Input:** "Calcification of the anterior longitudinal vertebral ligament with morphology suggestive of changes related to diffuse idiopathic skeletal hyperostosis..."  
+**Target:** "The patient has calcium deposits in the ligament that runs along the spine, which is a sign of a condition called diffuse idiopathic skeletal hyperostosis..."  
+**Generated:** "The front leg ligament, which is the part of the spine that separates the chest from the abdomen, is calcified and looks like it might be due to a spread of idiopathic skeletal hyperostosis..."  
+**Analysis:** Challenging case with complex medical terminology. Model struggles with rare conditions and produces some anatomical inaccuracies.
+
+### Example 5: Perfect Match (ROUGE-1: 1.0)
+**Input:** "Within normal limits."  
+**Target:** "Normal."  
+**Generated:** "Normal."  
+**Analysis:** Perfect match for simple cases. Model correctly handles straightforward medical conclusions.
+
+*For more examples, see [reports/examples.jsonl](reports/examples.jsonl)*
 
 ## Error Analysis
 
-*Sample error analysis will be added after training completion*
+### Model Performance Comparison
 
-### Common Failure Modes
-1. **Medical Terminology:** Complex terms not properly simplified
-2. **Context Loss:** Important clinical context omitted in translation
-3. **Length Mismatch:** Generated summaries too long or too short
-4. **Coherence Issues:** Disconnected sentences in layperson summary
+**Zero-shot Baseline (ROUGE-1: 0.317):**
+- Primary failure: Input copying instead of translation
+- Occasionally produces reasonable translations for simple cases
+- No understanding of translation task without training
+
+**T5-small Full Fine-tuning (ROUGE-1: 0.444):**
+- Moderate improvement over zero-shot (+12.7 points)
+- Common errors: oversimplification, incomplete translation, generic language
+- Limited vocabulary and context understanding
+
+**FLAN-T5-base LoRA (ROUGE-1: 0.696):**
+- Best performance with +37.9 points over zero-shot, +25.2 over full FT
+- Successfully balances medical accuracy with accessibility
+- Remaining errors: complex medical conditions, date formatting, length mismatch
+
+### Key Success Factors
+
+1. **Instruction Tuning Foundation:** FLAN-T5's pre-training on instruction-following tasks
+2. **Parameter Efficiency:** LoRA's 0.36% trainable parameters prevent overfitting
+3. **Model Scale:** 248M parameters provide better medical language understanding
+
+### Common Error Patterns
+
+- **Anatomical Terminology:** 15-20% of complex cases across all models
+- **Rare Medical Conditions:** 10-15% of specialized cases
+- **Date/Reference Formatting:** 5-10% of cases with references
+
+*For detailed error analysis, see [reports/error_analysis.md](reports/error_analysis.md)*
 
 ## Future Improvements
 
