@@ -65,6 +65,10 @@ def extract_training_data(history: Dict) -> Tuple[List, List, List, List, List]:
                 val_rougeL.append(entry['eval_rougeL'])
                 val_rougeLsum.append(entry['eval_rougeLsum'])
     
+    # Debug: print what we extracted
+    print(f"  Training: {len(train_steps)} steps, {len(train_losses)} losses, {len(learning_rates)} lr values")
+    print(f"  Validation: {len(val_steps)} steps, {len(val_rouge1)} rouge1 values")
+    
     return (train_steps, train_losses, learning_rates, 
             val_steps, val_rouge1, val_rouge2, val_rougeL, val_rougeLsum)
 
@@ -117,13 +121,22 @@ def plot_validation_rouge_metrics(lora_data: Tuple, full_ft_data: Tuple, output_
     ]
     
     for metric_name, lora_scores, full_scores, ax in metrics:
-        # Plot each model separately to handle different evaluation frequencies
-        if lora_scores and len(lora_scores) > 0:
+        # Plot LoRA data if available
+        if lora_scores and len(lora_scores) > 0 and len(lora_val_steps) == len(lora_scores):
             ax.plot(lora_val_steps, lora_scores, 'b-o', label='FLAN-T5-base LoRA', 
                     linewidth=2, markersize=4, alpha=0.8)
+        elif lora_scores and len(lora_scores) > 0:
+            # If lengths don't match, just plot the scores with step indices
+            ax.plot(range(len(lora_scores)), lora_scores, 'b-o', label='FLAN-T5-base LoRA', 
+                    linewidth=2, markersize=4, alpha=0.8)
         
-        if full_scores and len(full_scores) > 0:
+        # Plot Full FT data if available
+        if full_scores and len(full_scores) > 0 and len(full_val_steps) == len(full_scores):
             ax.plot(full_val_steps, full_scores, 'r-s', label='T5-small Full FT', 
+                    linewidth=2, markersize=4, alpha=0.8)
+        elif full_scores and len(full_scores) > 0:
+            # If lengths don't match, just plot the scores with step indices
+            ax.plot(range(len(full_scores)), full_scores, 'r-s', label='T5-small Full FT', 
                     linewidth=2, markersize=4, alpha=0.8)
         
         ax.set_xlabel('Training Steps', fontsize=11)
