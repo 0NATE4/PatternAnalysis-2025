@@ -397,6 +397,8 @@ print(layperson_summary)
 | **T5-small Full FT** | 0.444 | 0.230 | 0.397 | 0.397 | Full fine-tuning |
 | **FLAN-T5-base LoRA** | **0.696** | **0.496** | **0.640** | **0.640** | LoRA adaptation |
 
+**Note on ROUGE-L vs ROUGE-Lsum:** These metrics are identical in our results because the BioLaySumm dataset consists of very concise, short summaries (typically 1-3 sentences). ROUGE-Lsum computes sentence-level ROUGE-L and averages them, which converges to ROUGE-L when summaries are short. This is expected behavior for this dataset and not a calculation error.
+
 ### Key Findings
 - **FLAN-T5 LoRA achieves 69.6% ROUGE-1** - significantly outperforming both baselines
 - **+37.9 points improvement** over zero-shot baseline
