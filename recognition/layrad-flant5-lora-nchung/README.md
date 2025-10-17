@@ -417,10 +417,6 @@ The following plots demonstrate the training progression and model performance:
 ![Training Loss Comparison](reports/curves/training_loss_comparison.png)
 *Comparison of training loss between FLAN-T5 LoRA and T5-small Full Fine-tuning*
 
-### Validation ROUGE Metrics
-![Validation ROUGE Metrics](reports/curves/validation_rouge_metrics.png)
-*ROUGE scores during training showing convergence patterns*
-
 ### Learning Rate Schedules
 ![Learning Rate Schedules](reports/curves/learning_rate_schedules.png)
 *Learning rate warmup and decay schedules for both models*

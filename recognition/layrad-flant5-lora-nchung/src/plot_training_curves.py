@@ -280,9 +280,6 @@ def main():
     plot_training_loss_comparison(lora_data, full_ft_data, args.output_dir)
     print("✅ Generated training loss comparison")
     
-    plot_validation_rouge_metrics(lora_data, full_ft_data, args.output_dir)
-    print("✅ Generated validation ROUGE metrics")
-    
     plot_learning_rate_schedules(lora_data, full_ft_data, args.output_dir)
     print("✅ Generated learning rate schedules")
     
