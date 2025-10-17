@@ -362,6 +362,16 @@ print(layperson_summary)
 
 ## Hardware Requirements
 
+### Actual Training Configuration
+- **GPU Used:** NVIDIA A100-PCIE-40GB (40GB VRAM)
+- **System:** Slurm cluster with CUDA 11.8
+- **Memory Usage:**
+  - FLAN-T5-base LoRA: ~12GB VRAM
+  - T5-small Full FT: ~6GB VRAM (with gradient checkpointing)
+- **Training Time:**
+  - FLAN-T5 LoRA: 7.6 hours (3 epochs, 14,106 steps)
+  - T5-small Full FT: 7.2 hours (2 epochs, 9,404 steps)
+
 ### Minimum Requirements
 - **GPU:** NVIDIA GTX 1080 Ti (11GB VRAM) or better
 - **RAM:** 16GB system RAM
