@@ -117,10 +117,14 @@ def plot_validation_rouge_metrics(lora_data: Tuple, full_ft_data: Tuple, output_
     ]
     
     for metric_name, lora_scores, full_scores, ax in metrics:
-        ax.plot(lora_val_steps, lora_scores, 'b-o', label='FLAN-T5-base LoRA', 
-                linewidth=2, markersize=4, alpha=0.8)
-        ax.plot(full_val_steps, full_scores, 'r-s', label='T5-small Full FT', 
-                linewidth=2, markersize=4, alpha=0.8)
+        # Plot each model separately to handle different evaluation frequencies
+        if lora_scores and len(lora_scores) > 0:
+            ax.plot(lora_val_steps, lora_scores, 'b-o', label='FLAN-T5-base LoRA', 
+                    linewidth=2, markersize=4, alpha=0.8)
+        
+        if full_scores and len(full_scores) > 0:
+            ax.plot(full_val_steps, full_scores, 'r-s', label='T5-small Full FT', 
+                    linewidth=2, markersize=4, alpha=0.8)
         
         ax.set_xlabel('Training Steps', fontsize=11)
         ax.set_ylabel(f'{metric_name} Score', fontsize=11)
@@ -129,8 +133,8 @@ def plot_validation_rouge_metrics(lora_data: Tuple, full_ft_data: Tuple, output_
         ax.grid(True, alpha=0.3)
         
         # Add final scores
-        final_lora = lora_scores[-1] if lora_scores else 0
-        final_full = full_scores[-1] if full_scores else 0
+        final_lora = lora_scores[-1] if lora_scores and len(lora_scores) > 0 else 0
+        final_full = full_scores[-1] if full_scores and len(full_scores) > 0 else 0
         ax.text(0.02, 0.98, f'LoRA: {final_lora:.4f}\nFull FT: {final_full:.4f}', 
                 transform=ax.transAxes, verticalalignment='top', fontsize=9,
                 bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
