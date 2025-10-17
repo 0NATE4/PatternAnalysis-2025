@@ -397,7 +397,9 @@ print(layperson_summary)
 | **T5-small Full FT** | 0.444 | 0.230 | 0.397 | 0.397 | Full fine-tuning |
 | **FLAN-T5-base LoRA** | **0.696** | **0.496** | **0.640** | **0.640** | LoRA adaptation |
 
-**Note on ROUGE-L vs ROUGE-Lsum:** These metrics are identical in our results because we compute ROUGE metrics on plain text strings without sentence-level splitting. ROUGE-Lsum requires newline-separated sentences to compute sentence-level ROUGE-L and average them, but our evaluation treats each summary as a single sequence. This is a common implementation choice and not a calculation error.
+**Note on ROUGE-L vs ROUGE-Lsum:** We report identical values because our evaluation computes ROUGE on plain text without splitting into sentences. In Hugging Face `evaluate`, ROUGE-Lsum expects sentences separated by newline characters to apply sentence level aggregation. Since our references and predictions are single strings, ROUGE-Lsum reduces to ROUGE-L. This is a common implementation choice and not a calculation error.
+
+> If newline splitting is applied, ROUGE-Lsum may differ slightly. We prioritised the plain text variant for simplicity and consistency with prior work.
 
 ### Key Findings
 - **FLAN-T5 LoRA achieves 69.6% ROUGE-1** - significantly outperforming both baselines
