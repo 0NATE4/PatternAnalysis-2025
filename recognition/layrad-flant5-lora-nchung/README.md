@@ -156,21 +156,6 @@ Total Model Parameters:      60,000,000
   - ✅ No adapter overhead during inference
   - ✅ Better for domain-specific fine-tuning
 
-### Performance Expectations
-
-Based on similar medical text simplification tasks:
-
-| Metric | LoRA (FLAN-T5-base) | Full FT (T5-small) |
-|--------|---------------------|-------------------|
-| **ROUGE-1** | ~0.75 | ~0.72 |
-| **ROUGE-2** | ~0.65 | ~0.62 |
-| **ROUGE-L** | ~0.73 | ~0.70 |
-| **ROUGE-Lsum** | ~0.74 | ~0.71 |
-| **Training Time** | ~2 hours | ~3 hours |
-| **Memory Peak** | 12 GB | 6 GB |
-
-*Note: Performance estimates based on similar medical text tasks. Actual results may vary.*
-
 ### When to Use Each Strategy
 
 #### Choose LoRA when:
