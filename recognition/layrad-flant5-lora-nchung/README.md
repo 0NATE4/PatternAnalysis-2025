@@ -452,36 +452,7 @@ The following plots demonstrate the training progression and model performance:
 
 ## Error Analysis
 
-### Model Performance Comparison
-
-**Zero-shot Baseline (ROUGE-1: 0.317):**
-- Primary failure: Input copying instead of translation
-- Occasionally produces reasonable translations for simple cases
-- No understanding of translation task without training
-
-**T5-small Full Fine-tuning (ROUGE-1: 0.444):**
-- Moderate improvement over zero-shot (+12.7 points)
-- Common errors: oversimplification, incomplete translation, generic language
-- Limited vocabulary and context understanding
-
-**FLAN-T5-base LoRA (ROUGE-1: 0.696):**
-- Best performance with +37.9 points over zero-shot, +25.2 over full FT
-- Successfully balances medical accuracy with accessibility
-- Remaining errors: complex medical conditions, date formatting, length mismatch
-
-### Key Success Factors
-
-1. **Instruction Tuning Foundation:** FLAN-T5's pre-training on instruction-following tasks
-2. **Parameter Efficiency:** LoRA's 0.36% trainable parameters prevent overfitting
-3. **Model Scale:** 248M parameters provide better medical language understanding
-
-### Common Error Patterns
-
-- **Anatomical Terminology:** 15-20% of complex cases across all models
-- **Rare Medical Conditions:** 10-15% of specialized cases
-- **Date/Reference Formatting:** 5-10% of cases with references
-
-*For detailed error analysis, see [reports/error_analysis.md](reports/error_analysis.md)*
+The FLAN-T5-base LoRA model significantly outperforms both baselines, achieving 69.6% ROUGE-1 compared to 44.4% for T5-small full fine-tuning and 31.7% for zero-shot. The zero-shot baseline primarily fails by copying input text verbatim instead of translating, while T5-small full fine-tuning shows moderate improvement but suffers from oversimplification and limited vocabulary. The FLAN-T5 LoRA model successfully balances medical accuracy with accessibility, though it occasionally struggles with complex medical conditions (10-15% of cases) and rare anatomical terminology (15-20% of complex cases). The superior performance of FLAN-T5 LoRA can be attributed to its instruction-tuning foundation, parameter-efficient adaptation preventing overfitting, and larger model scale providing better medical language understanding.
 
 ## Future Improvements
 
