@@ -175,6 +175,7 @@ class BioLaySummDataset:
             
             # Create expert-to-layperson translation prompt
             # This prompt instructs the model to translate medical jargon into plain language
+            # The format follows instruction-tuning patterns for better model understanding
             input_text = f"Translate this expert radiology report into layperson terms:\n\n{expert_report}\n\nLayperson summary:"
             
             return {
@@ -214,7 +215,7 @@ class BioLaySummDataset:
             handling of variable-length sequences with padding.
         """
         # Tokenize input texts (expert reports with prompts)
-        # Truncate to max_source_length (512 tokens)
+        # Truncate to max_source_length (512 tokens) - sufficient for most radiology reports
         model_inputs = tokenizer(
             examples["input_text"],
             max_length=self.max_source_length,
@@ -224,7 +225,7 @@ class BioLaySummDataset:
         )
         
         # Tokenize target texts (layperson summaries)
-        # Truncate to max_target_length (256 tokens)
+        # Truncate to max_target_length (256 tokens) - layperson summaries are typically shorter
         labels = tokenizer(
             examples["target_text"],
             max_length=self.max_target_length,
@@ -235,7 +236,9 @@ class BioLaySummDataset:
         
         # Extract label input_ids and replace padding tokens with -100
         # This is CRITICAL: -100 tokens are ignored by the loss function
-        # Without this, the model would try to predict padding tokens
+        # Without this, the model would try to predict padding tokens, which would
+        # artificially inflate loss and hurt training. PyTorch's CrossEntropyLoss
+        # specifically ignores -100 labels during loss computation.
         labels = labels["input_ids"]
         labels[labels == tokenizer.pad_token_id] = -100
         

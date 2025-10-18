@@ -110,11 +110,11 @@ class BioLaySummPredictor:
             # Use default generation config with better parameters for examples
             self.generation_config = GenerationConfig(
                 max_new_tokens=256,  # Longer for better examples
-                num_beams=4,
-                length_penalty=0.6,
-                no_repeat_ngram_size=3,
-                early_stopping=True,
-                do_sample=False,
+                num_beams=4,         # Beam search for better quality (vs greedy)
+                length_penalty=0.6,  # Slightly penalize longer sequences
+                no_repeat_ngram_size=3,  # Prevent 3-gram repetition
+                early_stopping=True,     # Stop when EOS token is generated
+                do_sample=False,         # Deterministic generation for reproducibility
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
             )
@@ -202,7 +202,9 @@ class BioLaySummPredictor:
                     return_tensors='pt'
                 ).to(self.device)
                 
-                # Generate prediction
+                # Generate prediction using beam search
+                # Beam search explores multiple sequence possibilities and selects the best one
+                # This produces higher quality outputs than greedy decoding
                 outputs = self.model.generate(
                     input_ids=inputs['input_ids'],
                     attention_mask=inputs['attention_mask'],

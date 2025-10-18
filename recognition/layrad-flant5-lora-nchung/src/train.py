@@ -454,6 +454,10 @@ class BioLaySummTrainer:
         """
         Determine if gradient checkpointing should be enabled based on configuration.
         
+        Gradient checkpointing trades computation for memory by recomputing activations
+        during backward pass instead of storing them. Essential for full fine-tuning
+        large models on limited GPU memory.
+        
         Returns:
             bool: True if gradient checkpointing should be enabled
         """
@@ -464,7 +468,7 @@ class BioLaySummTrainer:
         is_full_finetuning = (training_strategy == 'full' or full_finetuning_enabled)
         
         if not is_full_finetuning:
-            # LoRA doesn't need gradient checkpointing
+            # LoRA doesn't need gradient checkpointing - only trains adapter weights
             return False
         
         # Check explicit gradient checkpointing setting
@@ -473,10 +477,11 @@ class BioLaySummTrainer:
         full_ft_settings = self.config.get('full_finetuning_settings', {})
         
         # Priority order: training > full_finetuning_settings > full_finetuning > default
+        # Default to True for full FT to prevent OOM errors
         gradient_checkpointing = (
             training_config.get('gradient_checkpointing',
             full_ft_settings.get('gradient_checkpointing', 
-            full_ft_config.get('gradient_checkpointing', True)))  # Default to True for full FT
+            full_ft_config.get('gradient_checkpointing', True)))
         )
         
         if gradient_checkpointing:
@@ -571,6 +576,9 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
     """
     Compute ROUGE metrics for evaluation.
     
+    This function implements the standard ROUGE evaluation protocol for sequence-to-sequence
+    models, handling token ID validation, label masking, and metric computation.
+    
     Args:
         eval_preds: Evaluation predictions from HuggingFace Trainer
             - predictions: Generated token IDs (or logits if predict_with_generate=False)
@@ -600,6 +608,7 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
         print(f"Predictions shape/dtype: {preds.shape}, {preds.dtype}", flush=True)
     
     # If predictions are logits (3D) or floats, convert to token IDs via argmax
+    # This handles cases where the model outputs probability distributions
     if preds.ndim == 3 or not np.issubdtype(preds.dtype, np.integer):
         preds = preds.argmax(axis=-1)
     
@@ -613,9 +622,12 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
         vocab_size = int(pred_ids.max() + 1)
     
     # Clamp invalid token IDs to pad_id (preserves sequence length, avoids OverflowError)
+    # This prevents crashes from out-of-vocabulary tokens that can occur during generation
     pred_ids = np.where((pred_ids >= 0) & (pred_ids < vocab_size), pred_ids, pad_id)
     
     # Handle labels: replace -100 with pad_id
+    # -100 is PyTorch's special token for ignored positions in loss computation
+    # We replace it with pad_id for proper text decoding
     labels = np.asarray(labels)
     labels = np.where(labels != -100, labels, pad_id)
     
@@ -631,10 +643,11 @@ def compute_rouge_metrics(eval_preds) -> Dict[str, float]:
     rouge = _get_rouge_metric()
     
     # Compute ROUGE metrics (following radadapt pattern)
+    # ROUGE measures n-gram overlap between generated and reference text
     rouge_results = rouge.compute(
         predictions=decoded_preds,
         references=decoded_labels,
-        use_stemmer=True
+        use_stemmer=True  # Use stemming for better word matching
     )
     
     # Extract and scale scores to percentages

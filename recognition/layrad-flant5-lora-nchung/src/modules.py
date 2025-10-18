@@ -97,13 +97,15 @@ class FLANT5LoRAModel:
         
         # Load base model
         if torch.cuda.is_available():
+            # Use device_map="auto" for automatic multi-GPU distribution
+            # This allows the model to be split across multiple GPUs if available
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 model_name,
                 dtype=torch_dtype,
                 device_map="auto"
             )
         else:
-            # CPU-only loading
+            # CPU-only loading - use float32 for better CPU compatibility
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 model_name,
                 dtype=torch.float32  # Use float32 for CPU
@@ -131,6 +133,9 @@ class FLANT5LoRAModel:
         lora_config = self.config.get('lora', {})
         
         # Create LoRA configuration
+        # r=8: Rank of low-rank matrices (balance between expressivity and efficiency)
+        # alpha=32: Scaling factor (alpha/r=4.0 encourages more aggressive adaptation)
+        # target_modules=['q','v']: Apply LoRA to query and value projections (original LoRA paper)
         self.lora_config = LoraConfig(
             task_type=TaskType.SEQ_2_SEQ_LM,
             inference_mode=False,
@@ -161,8 +166,8 @@ class FLANT5LoRAModel:
         
         # Calculate percentages
         total_params = param_counts['total']
-        trainable_params = param_counts['trainable']
-        frozen_params = param_counts['frozen']
+        trainable_params = param_counts['trainable']  # Only LoRA adapter parameters
+        frozen_params = param_counts['frozen']        # Base model parameters (frozen)
         
         trainable_percentage = (trainable_params / total_params) * 100
         frozen_percentage = (frozen_params / total_params) * 100
