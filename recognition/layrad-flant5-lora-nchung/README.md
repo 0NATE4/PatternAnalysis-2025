@@ -454,6 +454,8 @@ The following plots demonstrate the training progression and model performance:
 
 The FLAN-T5-base LoRA model significantly outperforms both baselines, achieving 69.6% ROUGE-1 compared to 44.4% for T5-small full fine-tuning and 31.7% for zero-shot. The zero-shot baseline primarily fails by copying input text verbatim instead of translating, while T5-small full fine-tuning shows moderate improvement but suffers from oversimplification and limited vocabulary. The FLAN-T5 LoRA model successfully balances medical accuracy with accessibility, though it occasionally struggles with complex medical conditions (10-15% of cases) and rare anatomical terminology (15-20% of complex cases). The superior performance of FLAN-T5 LoRA can be attributed to its instruction-tuning foundation, parameter-efficient adaptation preventing overfitting, and larger model scale providing better medical language understanding.
 
+Our strongest model is FLAN-T5 base with LoRA. The gain over T5-small full fine tuning reflects both the instruction-tuned base and the parameter efficient update, not LoRA alone. We fixed a held out test split and selected checkpoints only on validation ROUGE-Lsum. Decoding used beam search with a length penalty. The remaining errors are mostly rare condition names and anatomical mix ups. Future work is to add domain specific metrics and small ablations on LoRA rank.
+
 ## Future Improvements
 
 1. **Medical-Specific Metrics:** Integrate F1-CheXbert and F1-RadGraph
