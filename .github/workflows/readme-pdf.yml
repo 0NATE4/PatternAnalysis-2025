@@ -1,0 +1,22 @@
+name: Export README to PDF
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'recognition/layrad-flant5-lora-nchung/README.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build PDF
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/data" pandoc/latex:latest \
+            recognition/layrad-flant5-lora-nchung/README.md -f gfm -o README.pdf
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: readme-pdf
+          path: README.pdf
